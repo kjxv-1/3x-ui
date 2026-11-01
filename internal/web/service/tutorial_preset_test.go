@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"net"
+	"slices"
 	"testing"
 
 	"github.com/xtls/xray-core/infra/conf"
@@ -11,7 +12,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
-func TestTutorialPresetCreatesTwoUsableSubscriptionNodes(t *testing.T) {
+func TestTutorialPresetCreatesFourSubscriptionNodeDefinitions(t *testing.T) {
 	setupConflictDB(t)
 	result, err := ApplyTutorialPreset(TutorialPresetOptions{PublicAddress: "203.0.113.10", RealityServerName: TutorialDefaultServerName})
 	if err != nil {
@@ -22,7 +23,7 @@ func TestTutorialPresetCreatesTwoUsableSubscriptionNodes(t *testing.T) {
 	if err := db.Order("sub_sort_index").Find(&inbounds).Error; err != nil {
 		t.Fatal(err)
 	}
-	if len(inbounds) != 2 || inbounds[0].Tag != TutorialDirectTag || inbounds[1].Tag != TutorialResidentialTag {
+	if len(inbounds) != 4 || inbounds[0].Tag != TutorialDirectTag || inbounds[1].Tag != TutorialResidentialTag {
 		t.Fatalf("unexpected inbounds: %+v", inbounds)
 	}
 	if result.DirectPort == result.ResidentialPort || result.SubscriptionID == "" {
@@ -30,7 +31,7 @@ func TestTutorialPresetCreatesTwoUsableSubscriptionNodes(t *testing.T) {
 	}
 	privateKeys := map[string]bool{}
 	clientIDs := map[string]bool{}
-	for _, inbound := range inbounds {
+	for _, inbound := range inbounds[:2] {
 		if !inbound.Enable || inbound.ShareAddr != "203.0.113.10" {
 			t.Fatal("node is disabled or has wrong public address")
 		}
@@ -66,11 +67,11 @@ func TestTutorialPresetCreatesTwoUsableSubscriptionNodes(t *testing.T) {
 		t.Fatal("nodes must share one client identity and retain independent REALITY keys")
 	}
 	listed, err := (&ClientService{}).List()
-	if err != nil || len(listed) != 1 || listed[0].Email != "01" || len(listed[0].InboundIds) != 2 {
+	if err != nil || len(listed) != 1 || listed[0].Email != "01" || len(listed[0].InboundIds) != 4 {
 		t.Fatalf("client list must show one client attached to both nodes: %+v, %v", listed, err)
 	}
 	for _, inbound := range inbounds {
-		if listed[0].InboundIds[0] != inbound.Id && listed[0].InboundIds[1] != inbound.Id {
+		if !slices.Contains(listed[0].InboundIds, inbound.Id) {
 			t.Fatal("default client attachment is missing")
 		}
 	}
@@ -143,7 +144,7 @@ func TestTutorialPresetRepeatedApplyPreservesEditsAndDeletedNode(t *testing.T) {
 	}
 	var count int64
 	db.Model(&model.Inbound{}).Count(&count)
-	if count != 1 {
+	if count != 3 {
 		t.Fatal("deleted node was recreated")
 	}
 }

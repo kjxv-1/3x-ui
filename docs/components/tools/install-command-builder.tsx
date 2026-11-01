@@ -20,7 +20,7 @@ export function InstallCommandBuilder() {
 
   const options: InstallOptions = {
     method,
-    version: 'v3.10.2-preset',
+    version: 'v3.10.2-preset-ipv6-hy2',
     enableFail2ban,
     panelPort,
     webBasePath,
@@ -38,7 +38,7 @@ export function InstallCommandBuilder() {
           onChange={(v) => setMethod(v as InstallMethod)}
           options={['script', 'docker']}
         />
-        <p className="text-sm">v3.10.2-preset · Xray v26.6.27</p>
+        <p className="text-sm">v3.10.2-preset-ipv6-hy2 · Xray v26.6.27</p>
         {method === 'docker' ? (
           <>
             <TextField

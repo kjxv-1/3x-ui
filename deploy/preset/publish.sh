@@ -2,9 +2,9 @@
 # Maintain the user's single preset release after every build/install check passes.
 # Only this preset tag can move; original tutorial versions are never touched.
 set -euo pipefail
-readonly tag="v3.10.2-preset"
+readonly tag="v3.10.2-preset-ipv6-hy2"
 readonly repo="kjxv/3x-ui"
-readonly branch="codex/v3.10.2-preset"
+readonly branch="codex/v3.10.2-preset-ipv6-hy2"
 [[ "${GITHUB_REPOSITORY:?}" == "$repo" ]]
 [[ "${GITHUB_SHA:?}" =~ ^[0-9a-f]{40}$ ]]
 [[ "${PRESET_RELEASE_TAG:?}" == "$tag" ]]
@@ -46,7 +46,7 @@ gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha' > "$backup/old-ref"
 python3 - "$backup" "$GITHUB_SHA" <<'PY'
 import json,pathlib,sys
 root=pathlib.Path(sys.argv[1]); old=json.loads((root/'release.json').read_text())
-assert old['tag_name']=='v3.10.2-preset' and not old.get('immutable',False), 'Only the mutable preset release may be maintained'
+assert old['tag_name']=='v3.10.2-preset-ipv6-hy2' and not old.get('immutable',False), 'Only the mutable preset release may be maintained'
 assert not old['draft'], 'The previous published release must be available for backup'
 notes=pathlib.Path('deploy/preset/release-notes.md').read_text(encoding='utf-8')
 new={'name':'3X-UI v3.10.2 默认节点预设版（Xray 26.6.27）','body':notes+'\n维护提交：`'+sys.argv[2]+'`。\n','prerelease':False,'make_latest':'false'}

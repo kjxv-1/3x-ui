@@ -39,9 +39,9 @@ for index in "${!args[@]}"; do
             args[$index]=file:///tmp/install-acme-fixture.sh ;;
         https://api4.ipify.org)
             printf '127.0.0.1\n200'; exit 0 ;;
-        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset/*)
+        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/*)
+        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/*)
             raw_path="${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/}"
             args[$index]="file:///source/${raw_path#*/}" ;;
     esac
@@ -119,12 +119,16 @@ case "$code" in 200|301|302|307|308) : ;; *) tail -n 30 /tmp/tls-panel.log; exit
 python3 - <<'PY'
 import json,sqlite3,ssl,urllib.request
 c=sqlite3.connect('/etc/x-ui/x-ui.db')
-assert c.execute('SELECT count(*) FROM inbounds WHERE enable=1').fetchone()[0] == 2
+result=json.load(open('/etc/x-ui/preset-result.json'))
+assert c.execute('SELECT count(*) FROM inbounds WHERE enable=1').fetchone()[0] == 2 + int(result['ipv6Enabled']) + int(result['hy2Enabled'])
 records=c.execute('SELECT id,email,uuid FROM clients').fetchall()
 assert len(records) == 1 and records[0][1] == '01'
-assert c.execute('SELECT count(*) FROM client_inbounds WHERE client_id=?',(records[0][0],)).fetchone()[0] == 2
+assert c.execute('SELECT count(*) FROM client_inbounds WHERE client_id=?',(records[0][0],)).fetchone()[0] == 4
 for settings_json,stream_json in c.execute('SELECT settings,stream_settings FROM inbounds'):
     client=json.loads(settings_json)['clients'][0]
+    if 'realitySettings' not in json.loads(stream_json):
+        assert len(client['auth']) == 64
+        continue
     reality=json.loads(stream_json)['realitySettings']
     assert client['id'] == records[0][2] and client['email'] == '01'
     assert reality['minClientVer'] == '1.0.0' and reality['serverNames'] == ['www.samsung.com']
@@ -136,7 +140,8 @@ result=json.load(open('/etc/x-ui/preset-result.json'))
 context=ssl.create_default_context(cafile='/root/cert/ip/fullchain.pem')
 with urllib.request.urlopen('https://127.0.0.1:2096'+settings['subClashPath']+result['subscriptionId'],context=context,timeout=10) as response:
     text=response.read().decode()
-    assert text.count('type: vless') == 2
+    assert text.count('type: vless') == 2 + int(result['ipv6Enabled'])
+    assert text.count('type: hysteria2') == 1
     assert '自建-直连' in text and '自建-住宅' in text
 PY
 echo 'PASS: fresh IP-certificate installer restores bundle directory, creates two nodes, installs service, and serves HTTPS panel and Clash subscription'

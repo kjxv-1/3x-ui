@@ -674,6 +674,9 @@ func main() {
 		presetCmd.StringVar(&opts.PublicAddress, "publicAddress", "", "Public IP or hostname (default: panel host)")
 		presetCmd.IntVar(&opts.DirectPort, "directPort", 0, "Direct node port (0: choose available port)")
 		presetCmd.IntVar(&opts.ResidentialPort, "residentialPort", 0, "Residential node port (0: choose available port)")
+		presetCmd.StringVar(&opts.PublicIPv6Address, "ipv6Address", "", "Public server IPv6 literal (empty: detect active interfaces)")
+		presetCmd.IntVar(&opts.IPv6Port, "ipv6Port", 0, "IPv6 VLESS TCP port (0: choose available port)")
+		presetCmd.IntVar(&opts.HY2Port, "hy2Port", 0, "HY2 UDP port (0: choose available port)")
 		presetCmd.StringVar(&opts.RealityServerName, "realityServerName", "", "Non-Microsoft REALITY hostname (empty: auto-scan)")
 		if err := presetCmd.Parse(os.Args[2:]); err != nil {
 			os.Exit(1)

@@ -39,17 +39,26 @@ type TutorialPresetOptions struct {
 	PublicAddress     string
 	DirectPort        int
 	ResidentialPort   int
+	IPv6Port          int
+	HY2Port           int
+	PublicIPv6Address string
 	RealityServerName string
 }
 
 type TutorialPresetResult struct {
-	Version           string `json:"version"`
-	DirectPort        int    `json:"directPort"`
-	ResidentialPort   int    `json:"residentialPort"`
-	SubscriptionID    string `json:"subscriptionId"`
-	AlreadyApplied    bool   `json:"alreadyApplied"`
-	RealityServerName string `json:"realityServerName"`
-	RealityLatencyMs  int    `json:"realityLatencyMs"`
+	Version           string   `json:"version"`
+	DirectPort        int      `json:"directPort"`
+	ResidentialPort   int      `json:"residentialPort"`
+	IPv6Port          int      `json:"ipv6Port"`
+	HY2Port           int      `json:"hy2Port"`
+	IPv6Address       string   `json:"ipv6Address"`
+	IPv6Enabled       bool     `json:"ipv6Enabled"`
+	HY2Enabled        bool     `json:"hy2Enabled"`
+	Warnings          []string `json:"warnings,omitempty"`
+	SubscriptionID    string   `json:"subscriptionId"`
+	AlreadyApplied    bool     `json:"alreadyApplied"`
+	RealityServerName string   `json:"realityServerName"`
+	RealityLatencyMs  int      `json:"realityLatencyMs"`
 }
 
 // ApplyTutorialPreset is an explicit installer operation, not a startup seeder.
@@ -116,6 +125,24 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		if err != nil {
 			return err
 		}
+		used[residentialPort] = true
+		ipv6Port, err := tutorialPresetPort(opts.IPv6Port, nil, used)
+		if err != nil {
+			return err
+		}
+		used[ipv6Port] = true
+		hy2Port, err := tutorialUDPPort(opts.HY2Port, used)
+		if err != nil {
+			return err
+		}
+		ipv6Address := opts.PublicIPv6Address
+		if ipv6Address == "" {
+			ipv6Address = tutorialPublicIPv6()
+		}
+		hy2Stream, hy2Enabled, err := tutorialHY2Stream(cert, key, opts.PublicAddress)
+		if err != nil {
+			return err
+		}
 		serverName := opts.RealityServerName
 		latencyMs := 0
 		if serverName == "" {
@@ -157,7 +184,7 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		rules, _ := routing["rules"].([]any)
 		// The default API/private-address/BitTorrent protections retain priority.
 		rules = append(rules,
-			map[string]any{"type": "field", "inboundTag": []string{TutorialDirectTag}, "outboundTag": "direct"},
+			map[string]any{"type": "field", "inboundTag": []string{TutorialDirectTag, TutorialIPv6Tag, TutorialHY2Tag}, "outboundTag": "direct"},
 			map[string]any{"type": "field", "inboundTag": []string{TutorialResidentialTag}, "outboundTag": TutorialSocksTag},
 		)
 		routing["rules"] = rules
@@ -173,9 +200,13 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 			return err
 		}
 		now := time.Now().UnixMilli()
-		// One portable client identity is attached to both tutorial inbounds.
+		// One portable client identity is attached to all preset inbounds.
+		auth, err := tutorialRandomHex(32)
+		if err != nil {
+			return err
+		}
 		client := model.Client{
-			ID: uuid.NewString(), Email: "01", Flow: "xtls-rprx-vision",
+			ID: uuid.NewString(), Email: "01", Flow: "xtls-rprx-vision", Auth: auth,
 			SubID: subID, Enable: true, CreatedAt: now, UpdatedAt: now,
 		}
 		var owner model.User
@@ -188,6 +219,8 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		}{
 			{TutorialDirectTag, "自建-直连", directPort},
 			{TutorialResidentialTag, "自建-住宅", residentialPort},
+			{TutorialIPv6Tag, "自建-IPv6直连", ipv6Port},
+			{TutorialHY2Tag, "自建-HY2", hy2Port},
 		} {
 			settings, err := json.Marshal(map[string]any{"clients": []model.Client{client}, "decryption": "none", "fallbacks": []any{}})
 			if err != nil {
@@ -206,6 +239,28 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 			if opts.PublicAddress != "" {
 				inbound.ShareAddrStrategy = "custom"
 				inbound.ShareAddr = opts.PublicAddress
+			}
+			switch definition.tag {
+			case TutorialIPv6Tag:
+				inbound.Listen = "::"
+				inbound.ShareAddrStrategy = "custom"
+				inbound.ShareAddr = ipv6Address
+				inbound.Enable = ipv6Address != ""
+				inbound.ExcludeFromSub = !inbound.Enable
+				inbound.StreamSettings, err = tutorialIPv6Stream(serverName)
+				if err != nil {
+					return err
+				}
+			case TutorialHY2Tag:
+				inbound.Protocol = model.Hysteria
+				encoded, err := json.Marshal(map[string]any{"version": 2, "clients": []model.Client{client}})
+				if err != nil {
+					return err
+				}
+				inbound.Settings = string(encoded)
+				inbound.StreamSettings = hy2Stream
+				inbound.Enable = hy2Enabled
+				inbound.ExcludeFromSub = !hy2Enabled
 			}
 			if err := tx.Omit("ClientStats").Create(inbound).Error; err != nil {
 				return err
@@ -230,7 +285,15 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 				return err
 			}
 		}
-		*result = TutorialPresetResult{Version: config.GetBaseVersion(), DirectPort: directPort, ResidentialPort: residentialPort, SubscriptionID: subID, RealityServerName: serverName, RealityLatencyMs: latencyMs}
+		*result = TutorialPresetResult{Version: config.GetBaseVersion(), DirectPort: directPort, ResidentialPort: residentialPort,
+			IPv6Port: ipv6Port, HY2Port: hy2Port, IPv6Address: ipv6Address, IPv6Enabled: ipv6Address != "", HY2Enabled: hy2Enabled,
+			SubscriptionID: subID, RealityServerName: serverName, RealityLatencyMs: latencyMs}
+		if ipv6Address == "" {
+			result.Warnings = append(result.Warnings, "IPv6 node is disabled and excluded from subscriptions: no public server IPv6 was found. Configure server IPv6 and this node's custom share address before enabling it.")
+		}
+		if !hy2Enabled {
+			result.Warnings = append(result.Warnings, "HY2 node is disabled and excluded from subscriptions: no TLS certificate was configured. Add a valid certificate and matching SNI before enabling it.")
+		}
 		encodedResult, err := json.Marshal(result)
 		if err != nil {
 			return err
@@ -244,13 +307,20 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 }
 
 func validateTutorialPresetOptions(opts TutorialPresetOptions) error {
-	for _, port := range []int{opts.DirectPort, opts.ResidentialPort} {
+	for _, port := range []int{opts.DirectPort, opts.ResidentialPort, opts.IPv6Port, opts.HY2Port} {
 		if port < 0 || port > 65535 {
 			return errors.New("preset ports must be between 1 and 65535, or 0 for automatic selection")
 		}
 	}
-	if opts.DirectPort != 0 && opts.DirectPort == opts.ResidentialPort {
-		return errors.New("preset nodes need different ports")
+	seen := map[int]bool{}
+	for _, port := range []int{opts.DirectPort, opts.ResidentialPort, opts.IPv6Port, opts.HY2Port} {
+		if port != 0 && seen[port] {
+			return errors.New("preset nodes need different ports")
+		}
+		seen[port] = true
+	}
+	if opts.PublicIPv6Address != "" && !tutorialIsPublicIPv6(net.ParseIP(opts.PublicIPv6Address)) {
+		return errors.New("preset IPv6 address must be a public IPv6 literal without brackets, prefix length or zone ID")
 	}
 	for _, host := range []string{opts.PublicAddress, opts.RealityServerName} {
 		if host == "" || net.ParseIP(host) != nil {

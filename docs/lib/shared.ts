@@ -10,14 +10,14 @@ export const docsContentRoute = '/llms.mdx/docs';
 export const productRepo = {
   user: 'kjxv',
   repo: '3x-ui',
-  branch: 'codex/v3.10.2-preset',
+  branch: 'codex/v3.10.2-preset-ipv6-hy2',
 };
 
 // Where these docs live in the 3x-ui monorepo — used for "Edit on GitHub" links.
 export const gitConfig = {
   user: 'kjxv',
   repo: '3x-ui',
-  branch: 'codex/v3.10.2-preset',
+  branch: 'codex/v3.10.2-preset-ipv6-hy2',
   docsDir: 'docs/content/docs',
 };
 

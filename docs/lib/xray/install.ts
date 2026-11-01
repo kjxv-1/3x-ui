@@ -4,7 +4,7 @@ export type InstallMethod = 'script' | 'docker';
 
 export interface InstallOptions {
   method: InstallMethod;
-  /** Preserved for callers; this branch always uses v3.10.2-preset. */
+  /** Preserved for callers; this branch always uses v3.10.2-preset-ipv6-hy2. */
   version: string;
   enableFail2ban: boolean;
   panelPort: string;
@@ -12,9 +12,9 @@ export interface InstallOptions {
 }
 
 const REPO_RAW =
-  'https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh';
-const IMAGE = 'ghcr.io/kjxv/3x-ui:v3.10.2-preset';
-const SOURCE = 'https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset';
+  'https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh';
+const IMAGE = 'ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2';
+const SOURCE = 'https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2';
 
 /** This branch deploys one maintained preset, independent of upstream latest. */
 export function buildScriptCommand(_options: InstallOptions): string {

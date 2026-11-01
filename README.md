@@ -76,7 +76,7 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 Install this fork's **3X-UI 3.10.2 preset**, with **Xray v26.6.27** pinned:
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
 The initial installation creates **自建-直连** and **自建-住宅**, two VLESS + REALITY inbounds on different random available ports, sharing one `01` client. Clash/Mihomo subscriptions are enabled.
@@ -119,7 +119,7 @@ The source SQLite file is left untouched; remove it manually once you have verif
 Build this fork's image locally before starting the container:
 
 ```bash
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset
+docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
 ```
 
 The default `docker compose up -d` keeps using SQLite. To run with the bundled PostgreSQL service, uncomment the two `XUI_DB_*` env lines in `docker-compose.yml` and start with the profile:
@@ -131,7 +131,7 @@ docker compose --profile postgres up -d
 The image bundles Fail2ban (enabled by default) to enforce per-client **IP limits**. Fail2ban bans offenders with `iptables`, which requires the `NET_ADMIN` capability. `docker-compose.yml` already grants it via `cap_add`; if you start the container with `docker run` instead, add the capabilities yourself, otherwise bans are logged but never applied:
 
 ```bash
-docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset
+docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2
 ```
 
 ## Environment Variables

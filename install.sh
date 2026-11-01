@@ -1710,12 +1710,12 @@ install_x-ui() {
     local preset_first_install=0
     local preset_pending="${XUI_DB_FOLDER:-/etc/x-ui}/.preset-pending"
     if [[ -f "$preset_pending" ]] || [[ ! -e "${xui_folder}/x-ui" && ! -e "${XUI_DB_FOLDER:-/etc/x-ui}/x-ui.db" ]]; then preset_first_install=1; fi
-    if [[ $# -gt 0 && "$1" != "v3.10.2-preset" ]]; then echo "This preset installer only installs v3.10.2-preset." >&2; exit 1; fi
+    if [[ $# -gt 0 && "$1" != "v3.10.2-preset-ipv6-hy2" ]]; then echo "This preset installer only installs v3.10.2-preset-ipv6-hy2." >&2; exit 1; fi
     cd ${xui_folder%/x-ui}/
 
     # Download resources
     if [ $# == 0 ]; then
-        tag_version="v3.10.2-preset"
+        tag_version="v3.10.2-preset-ipv6-hy2"
         if [[ ! -n "$tag_version" ]]; then
             echo -e "${red}Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later${plain}"
             exit 1
@@ -1915,7 +1915,7 @@ install_x-ui() {
     mkdir -p /var/log/x-ui
     if [[ "$preset_first_install" == "1" ]]; then
         mkdir -p "${XUI_DB_FOLDER:-/etc/x-ui}" || exit 1
-        (umask 077; printf '%s\n' "v3.10.2-preset" > "$preset_pending") || exit 1
+        (umask 077; printf '%s\n' "v3.10.2-preset-ipv6-hy2" > "$preset_pending") || exit 1
     fi
     config_after_install
     # ACME installation changes the shell directory to the user's home.
@@ -1931,6 +1931,9 @@ install_x-ui() {
         [[ -z "$preset_address" ]] || preset_options+=(-publicAddress "$preset_address")
         [[ -z "${XUI_PRESET_DIRECT_PORT:-}" ]] || preset_options+=(-directPort "$XUI_PRESET_DIRECT_PORT")
         [[ -z "${XUI_PRESET_RESIDENTIAL_PORT:-}" ]] || preset_options+=(-residentialPort "$XUI_PRESET_RESIDENTIAL_PORT")
+        [[ -z "${XUI_PRESET_IPV6_ADDRESS:-}" ]] || preset_options+=(-ipv6Address "$XUI_PRESET_IPV6_ADDRESS")
+        [[ -z "${XUI_PRESET_IPV6_PORT:-}" ]] || preset_options+=(-ipv6Port "$XUI_PRESET_IPV6_PORT")
+        [[ -z "${XUI_PRESET_HY2_PORT:-}" ]] || preset_options+=(-hy2Port "$XUI_PRESET_HY2_PORT")
         [[ -z "${XUI_PRESET_REALITY_SERVER_NAME:-}" ]] || preset_options+=(-realityServerName "$XUI_PRESET_REALITY_SERVER_NAME")
         local preset_result="${XUI_DB_FOLDER:-/etc/x-ui}/preset-result.json"
         local preset_result_temp="${preset_result}.tmp.$$"

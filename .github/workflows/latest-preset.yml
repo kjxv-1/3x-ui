@@ -2,7 +2,7 @@ name: Maintain latest default node preset
 'on':
   push:
     branches:
-    - codex/v3.10.2-preset
+    - codex/v3.10.2-preset-ipv6-hy2
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -194,7 +194,7 @@ jobs:
     - build-windows
     - verify
     - installer-test
-    if: github.ref == 'refs/heads/codex/v3.10.2-preset'
+    if: github.ref == 'refs/heads/codex/v3.10.2-preset-ipv6-hy2'
     permissions:
       contents: write
     steps:
@@ -257,12 +257,12 @@ jobs:
           if docker exec preset-container-test test -f /etc/x-ui/preset-result.json; then break; fi
           sleep 1
         done
-        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset
+        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset-ipv6-hy2
         docker exec preset-container-test /app/bin/xray-linux-amd64 version | grep -F 'Xray 26.6.27'
         docker exec preset-container-test test -s /etc/x-ui/preset-result.json
         docker rm -f preset-container-test
 concurrency:
-  group: maintain-v3.10.2-preset
+  group: maintain-v3.10.2-preset-ipv6-hy2
   cancel-in-progress: false
 env:
-  PRESET_RELEASE_TAG: v3.10.2-preset
+  PRESET_RELEASE_TAG: v3.10.2-preset-ipv6-hy2

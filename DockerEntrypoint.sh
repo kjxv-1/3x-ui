@@ -88,6 +88,9 @@ if [ "${XUI_DB_TYPE:-sqlite}" = postgres ] || [ ! -e "$DB_FOLDER/x-ui.db" ] || [
     [ -z "${XUI_PRESET_PUBLIC_ADDRESS:-}" ] || set -- "$@" -publicAddress "$XUI_PRESET_PUBLIC_ADDRESS"
     [ -z "${XUI_PRESET_DIRECT_PORT:-}" ] || set -- "$@" -directPort "$XUI_PRESET_DIRECT_PORT"
     [ -z "${XUI_PRESET_RESIDENTIAL_PORT:-}" ] || set -- "$@" -residentialPort "$XUI_PRESET_RESIDENTIAL_PORT"
+    [ -z "${XUI_PRESET_IPV6_ADDRESS:-}" ] || set -- "$@" -ipv6Address "$XUI_PRESET_IPV6_ADDRESS"
+    [ -z "${XUI_PRESET_IPV6_PORT:-}" ] || set -- "$@" -ipv6Port "$XUI_PRESET_IPV6_PORT"
+    [ -z "${XUI_PRESET_HY2_PORT:-}" ] || set -- "$@" -hy2Port "$XUI_PRESET_HY2_PORT"
     if ! (umask 077; /app/x-ui preset "$@" > "$DB_FOLDER/preset-result.json.tmp"); then
         echo "Preset initialization failed. Check REALITY target connectivity and retry." >&2
         exit 1

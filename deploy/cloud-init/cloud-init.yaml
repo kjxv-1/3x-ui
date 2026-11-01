@@ -44,7 +44,7 @@ write_files:
       #   export XUI_DB_DSN="postgres://user:pass@host:5432/db?sslmode=disable"
       # ------------------------------------------------------------------------
 
-      curl -fsSL https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh | bash
+      curl -fsSL https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh | bash
 
       # Surface the generated credentials. Full creds (incl. password + API token)
       # go ONLY to the serial console (/dev/console, owner-only). /etc/motd is

@@ -16,10 +16,10 @@ cat > /usr/local/bin/curl <<"CURL"
 args=("$@")
 for index in "${!args[@]}"; do
     case "${args[$index]}" in
-        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset/*)
+        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/*)
-            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/}" ;;
+        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/*)
+            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/}" ;;
     esac
 done
 if [[ " ${args[*]} " == *"%{http_code}"* && " ${args[*]} " == *"I"* ]]; then
@@ -56,7 +56,7 @@ PY
 bash /source/install.sh > /tmp/install.log 2>&1 || { tail -n 60 /tmp/install.log; exit 1; }
 test ! -e /etc/x-ui/.preset-pending
 test ! -e /etc/x-ui/.kjxv-preset-pending
-test "$(/usr/local/x-ui/x-ui -v)" = "3.10.2-preset"
+test "$(/usr/local/x-ui/x-ui -v)" = "3.10.2-preset-ipv6-hy2"
 test "$(stat -c %a /etc/x-ui/install-result.env)" = 600
 test "$(stat -c %a /etc/x-ui/preset-result.json)" = 600
 . /etc/x-ui/install-result.env
@@ -67,17 +67,20 @@ python3 - <<"PY"
 import json,sqlite3
 result=json.load(open("/etc/x-ui/preset-result.json"))
 c=sqlite3.connect("/etc/x-ui/x-ui.db")
-assert c.execute("SELECT count(*) FROM inbounds WHERE enable=1").fetchone()[0] == 2
+assert c.execute("SELECT count(*) FROM inbounds WHERE enable=1").fetchone()[0] == 2 + int(result["ipv6Enabled"]) + int(result["hy2Enabled"])
 records=c.execute("SELECT id,email,uuid FROM clients").fetchall()
 assert len(records) == 1 and records[0][1] == "01"
-assert c.execute("SELECT count(*) FROM client_inbounds WHERE client_id=?",(records[0][0],)).fetchone()[0] == 2
+assert c.execute("SELECT count(*) FROM client_inbounds WHERE client_id=?",(records[0][0],)).fetchone()[0] == 4
 for row in c.execute("SELECT settings,stream_settings FROM inbounds"):
     client=json.loads(row[0])["clients"][0]
+    if "realitySettings" not in json.loads(row[1]):
+        assert len(client["auth"]) == 64
+        continue
     reality=json.loads(row[1])["realitySettings"]
     assert client["email"] == "01" and client["id"] == records[0][2]
     assert reality["minClientVer"] == "1.0.0" and reality["serverNames"] == ["www.samsung.com"]
 sub_ids=[json.loads(row[0])["clients"][0]["subId"] for row in c.execute("SELECT settings FROM inbounds")]
-assert sub_ids == [result["subscriptionId"],result["subscriptionId"]]
+assert sub_ids == [result["subscriptionId"]] * 4
 assert c.execute("SELECT value FROM settings WHERE key=?",("subClashEnable",)).fetchone()[0] == "true"
 PY
 cd /usr/local/x-ui
@@ -96,7 +99,7 @@ result=json.load(open("/etc/x-ui/preset-result.json"))
 path=sqlite3.connect("/etc/x-ui/x-ui.db").execute("SELECT value FROM settings WHERE key=?",("subClashPath",)).fetchone()[0]
 with urllib.request.urlopen("http://127.0.0.1:2096"+path+result["subscriptionId"],timeout=10) as r:
     text=r.read().decode()
-    assert text.count("type: vless") == 2, "Unexpected Clash body: " + repr(text[:3000])
+    assert text.count("type: vless") == 2 + int(result["ipv6Enabled"]), "Unexpected Clash body: " + repr(text[:3000])
     assert "自建-直连" in text and "自建-住宅" in text
 PY
 kill "$panel_pid"

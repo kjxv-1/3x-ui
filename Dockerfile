@@ -10,7 +10,7 @@ RUN set -eu; \
       arm/v7) platform=armv7 ;; arm/v6) platform=armv6 ;; arm/v5) platform=armv5 ;; \
       s390x/*) platform=s390x ;; *) echo 'Unsupported architecture' >&2; exit 1 ;; \
     esac; \
-    release='https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset'; \
+    release='https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2'; \
     curl -fLsS --retry 5 "$release/checksums.txt" -o /tmp/checksums.txt; \
     archive="x-ui-linux-${platform}.tar.gz"; \
     curl -fLsS --retry 5 "$release/$archive" -o "/tmp/$archive"; \

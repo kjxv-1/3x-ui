@@ -1,49 +1,72 @@
-# 3X-UI 3.10.2 默认节点版
+# 3X-UI 3.10.2 IPv6 + HY2 默认节点版
 
-基于作者正式版 `v3.10.2`，独立分支 `codex/v3.10.2-preset`，固定部署标签 `v3.10.2-preset`。本分支不改动已有 v3.6.0 视频版或 v3.6.0-preset.4 预设版。
+基于 3X-UI v3.10.2，Xray 内核继续固定为 **v26.6.27**。独立分支 `codex/v3.10.2-preset-ipv6-hy2`，独立标签 `v3.10.2-preset-ipv6-hy2`。旧 `v3.10.2-preset`、v3.6.0 视频版及其安装包保持不变。
 
 ## 一键部署
 
-以 root 在 Linux VPS 上运行：
+在 Linux VPS 上以 root 执行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
-面板程序、管理脚本和安装包从 `kjxv/3x-ui` 下载；安装前必须验证 SHA256。Xray 运行内核固定为 `v26.6.27`，构建时校验官方发布包的 SHA256 后将内核打包进本仓库安装包，部署时不依赖原作者的面板安装包。
+安装包、面板、安装脚本和管理脚本来自 `kjxv/3x-ui` 的本标签，下载后强制验证 SHA256。包内包含校验过的固定 Xray 内核。
 
-## 默认配置
+## 首次部署生成的节点
 
-- **自建-直连**：VLESS + TCP + REALITY / Vision，通过 VPS 公网出口连接。
-- **自建-住宅**：VLESS + TCP + REALITY / Vision，通过住宅 Socks5 出站 `默认` 连接。
-- 两个入站使用不同的随机空闲端口，避开面板、订阅和内置管理端口；实际端口在安装结果和面板中显示。请在云安全组放行实际端口，以及面板和订阅端口。
-- 一个邮箱为 `01` 的客户端关联两个入站；UUID、订阅 ID 和各入站 REALITY 密钥随机生成。最小客户端版本为 `1.0.0`。
-- 面板的订阅服务和 Clash/Mihomo 订阅开关默认打开。
-- 首次安装在服务器上运行面板自带的目标扫描器：保留 TLS 1.3、HTTP/2、X25519 和有效证书检测成功的候选目标，排除微软及常见微软服务域名，再选择检测延迟较低的一项。只填写验证过的目标域名作为 SNI。
+| 名称 | 配置 | 默认出站 |
+| --- | --- | --- |
+| 自建-直连 | VLESS + TCP + REALITY / Vision，IPv4 分享地址 | VPS 直连 |
+| 自建-住宅 | VLESS + TCP + REALITY / Vision | 住宅 Socks5 出站“默认” |
+| 自建-IPv6直连 | VLESS + TCP + REALITY / Vision，IPv6-only 监听，独立 IPv6 分享地址 | VPS 直连 |
+| 自建-HY2 | Hysteria 2 + QUIC/UDP + TLS | VPS 直连 |
 
-登录后在 **Xray 设置 → 出站** 编辑 **默认**，填写住宅 Socks5 地址、端口及认证信息，保存并导入订阅。
-住宅出站未填写或不可达时，住宅节点连接失败，不回退到 VPS 出口；直连节点独立可用。使用供应商 IP 白名单认证时，应将 VPS 的出口 IP 加入白名单。
+四个入站共用一个邮箱为 **01** 的客户端及同一订阅 ID。UUID、HY2 认证密码、各 REALITY 密钥及 Short ID 都随机生成。VLESS 最小客户端版本为 1.0.0。订阅服务及 Clash/Mihomo 订阅默认开启，节点备注不含个人名称。
 
-## 可选参数与已有配置
+REALITY 继续使用面板的目标扫描器，筛选可用的非微软候选，再选延迟较低的目标。客户端 SNI 只包含选中的域名。HY2 不使用 REALITY 或该 SNI，它使用 TLS 证书所覆盖的名称。
 
-默认自动扫描；若服务器无法连通所有候选站点，初始化会明确报错并回滚新增配置，修复网络后重新运行命令即可继续。
-可用 `XUI_PRESET_REALITY_SERVER_NAME` 指定已经确认可用的非微软目标。`XUI_PRESET_PUBLIC_ADDRESS` 指定分享地址；`XUI_PRESET_DIRECT_PORT`、`XUI_PRESET_RESIDENTIAL_PORT` 可覆盖随机端口。
-首次初始化才创建节点和订阅设置；升级、重装和启动均保留已有用户配置，不重新生成凭据或恢复已删除的节点。安装结果保存在 `/etc/x-ui/preset-result.json`，权限为 600。
+### IPv6 条件
 
-固定的是本分支的默认运行内核。新版面板的某些额外协议和新内核功能可能需要高于 26.6.27 的 Xray，使用这些功能前应另外验证；本发行版验证上述 VLESS/REALITY 直连及住宅转发路径。
+自动选择服务器已启用网卡上的公网 IPv6，排除 `fe80::`、`fd00::`、回环和 IPv4。分享地址不会误用登录面板时的 IPv4。VPS 必须事先由服务商和操作系统配置好 IPv6；此安装器不会替你创建 IPv6 隧道、修改系统网络或自动开通服务商地址。
 
-## 构建和维护
+若未发现公网 IPv6，仍创建该入站，但**禁用并从订阅排除**，在安装结果中明确提示。完成服务器 IPv6 配置后，在面板填写真实的 IPv6 分享地址、启用入站并取消“从订阅中排除”。使用 IPv6 节点的电脑或手机也必须有可用的 IPv6 网络。IPv6 接入不强制改变网站最终看到的出口地址族。
 
-`base-assets.json` 固定作者 v3.10.2 的辅助运行文件，以及 Xray v26.6.27 的各平台发布包 SHA256。CI 构建面板并替换固定 Xray 内核，完成实际连接、Clash 订阅、事务回滚、HTTPS 安装和多平台检查后发布到本仓库。
-后续本版本修复沿用 `v3.10.2-preset`，每次更新记录维护提交，不递增一批临时标签。旧视频版和原有 Latest 标记保持不变。
+### HY2 条件
 
-## Docker 部署
+HY2 复用安装时配置的面板 TLS 证书及密钥文件，SNI 从证书覆盖的域名或 IP 中选择，保持正常证书校验，不生成跳过验证的订阅配置。证书续期继续使用现有文件及面板的重启机制。
 
-在 Linux 上可从本仓库构建本地镜像后启动，无需拉取原作者镜像或登录镜像仓库：
+默认安装流程申请 IP 证书或配置有效域名证书后，HY2 自动启用。若选择跳过 TLS，HY2 入站会禁用并从订阅排除，其他节点照常创建。后续可在该入站的安全设置中选择有效证书和对应 SNI，再启用并取消订阅排除。证书文件存在但无效、过期或密钥不匹配时，首次初始化明确报错并回滚，保留待重试标记。
+
+### 端口与住宅出站
+
+四个节点选择互不重复的随机空闲端口；VLESS 检查 TCP 占用，HY2 检查 UDP 占用。请在 VPS 防火墙和云安全组按安装结果放行：**VLESS 是 TCP，HY2 是 UDP**，同时保留面板和订阅端口。安装结果写入 `/etc/x-ui/preset-result.json`，权限 600，含新增端口及启用状态。
+
+住宅节点沿用原版设置：登录后编辑 Xray 出站“默认”，填写住宅 Socks5 地址、端口和认证信息。未填写或不可达时，住宅节点失败，不回退到 VPS 出口；其他直连节点独立使用。供应商采用 IP 白名单时，将 VPS 的相应出口 IP 加入白名单。
+
+## 可选参数
+
+- `XUI_PRESET_PUBLIC_ADDRESS`：IPv4 节点和 HY2 的分享地址，可为 IP 或域名。
+- `XUI_PRESET_IPV6_ADDRESS`：明确指定服务器的公网 IPv6，不能带方括号、端口、`/64` 或 `%接口编号`；须由你确保该地址已配置可用。
+- `XUI_PRESET_DIRECT_PORT`、`XUI_PRESET_RESIDENTIAL_PORT`：原有 VLESS TCP 端口。
+- `XUI_PRESET_IPV6_PORT`：新增 IPv6 VLESS TCP 端口。
+- `XUI_PRESET_HY2_PORT`：HY2 UDP 端口。
+- `XUI_PRESET_REALITY_SERVER_NAME`：指定已验证可用的非微软 REALITY 目标，跳过自动扫描。
+
+## 已有面板和升级
+
+预设只在首次空面板安装时执行，创建记录、路由、客户端、设置和完成标记在同一事务内提交。失败可修复后重试。
+
+**在已有面板上运行新版安装器会保留已有配置，不自动追加节点。** 旧预设的完成标记同样受保护；已删除节点不会被重新创建，订阅 ID、UUID、住宅认证和用户修改不会被重置。本标签用于新部署时自动得到四个节点。
+
+## Docker
 
 ```bash
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset
-docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset
+docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
+docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2
 ```
 
-镜像在构建时下载并校验本仓库已经通过检查的发布包，使用相同的固定内核与首次初始化流程。主机网络让随机入站端口和订阅端口能按实际配置对外服务。
+容器首次启动没有证书时，HY2 保留为待配置状态。容器使用 HY2 时，需要持久挂载有效证书文件，并在面板设置对应路径和 SNI。
+
+## 验证与维护
+
+发布前检查首次初始化和事务回滚、重复安装保护、IPv6 REALITY 实际连接、验证证书的 HY2 实际连接、住宅 Socks5 路由与失败隔离、Clash/Mihomo 四节点订阅、HTTPS 安装和多平台安装包。只有全部必要检查通过后，才发布本标签及完整安装包。

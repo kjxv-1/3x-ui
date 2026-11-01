@@ -135,21 +135,29 @@ def main():
                    XRAY_LOCATION_ASSET=str(root / 'bin'), XUI_ENABLE_FAIL2BAN='false', XUI_LOG_LEVEL='error')
         binary = str(root / ('x-ui.exe' if os.name == 'nt' else 'x-ui'))
         direct_port, residential_port, panel_port, subscription_port = port(), port(), port(), port()
-        command = [binary, 'preset', '-realityServerName', 'www.samsung.com', '-publicAddress', '127.0.0.1', '-directPort', str(direct_port), '-residentialPort', str(residential_port)]
+        subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(work / 'key.pem'),
+                        '-out', str(work / 'cert.pem'), '-days', '1', '-subj', '/CN=www.samsung.com',
+                        '-addext', 'subjectAltName=DNS:www.samsung.com,IP:127.0.0.1,IP:::1'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([binary, 'cert', '-webCert', str(work / 'cert.pem'), '-webCertKey', str(work / 'key.pem')],
+                       cwd=root, env=env, check=True, stdout=subprocess.DEVNULL)
+        command = [binary, 'preset', '-realityServerName', 'www.samsung.com', '-publicAddress', '127.0.0.1', '-directPort', str(direct_port), '-residentialPort', str(residential_port), '-ipv6Address', '2001:db8::10']
         subprocess.run(command, cwd=root, env=env, check=True, stdout=subprocess.DEVNULL)
         database = sqlite3.connect(work / 'x-ui.db')
         result = json.loads(database.execute("SELECT value FROM settings WHERE key='tutorialPresetV1'").fetchone()[0])
         clash_path = database.execute("SELECT value FROM settings WHERE key='subClashPath'").fetchone()[0]
         inbounds = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY sub_sort_index').fetchall()
-        assert [row[0] for row in inbounds] == ['默认直连', '默认住宅']
+        assert [row[0] for row in inbounds] == ['默认直连', '默认住宅', '默认IPv6直连', '默认HY2直连']
         assert 'kjxv' not in json.dumps(inbounds).lower()
         records = database.execute('SELECT id,email,uuid,sub_id FROM clients').fetchall()
         assert len(records) == 1 and records[0][1] == '01'
         attachments = database.execute('SELECT inbound_id FROM client_inbounds WHERE client_id=?', (records[0][0],)).fetchall()
-        assert len(attachments) == 2
-        for _, settings_json, stream_json in inbounds:
+        assert len(attachments) == 4
+        for tag, settings_json, stream_json in inbounds:
             client = json.loads(settings_json)['clients'][0]
             assert client['email'] == '01' and client['id'] == records[0][2] and client['subId'] == result['subscriptionId']
+            if tag == '默认HY2直连':
+                assert len(client['auth']) == 64
+                continue
             reality = json.loads(stream_json)['realitySettings']
             assert reality['minClientVer'] == '1.0.0'
             assert reality['serverNames'] == ['www.samsung.com']
@@ -160,9 +168,6 @@ def main():
         socks = start_server(TCPServer(('127.0.0.1', 0), Socks))
         servers.append(socks)
         # A local TLS 1.3 / h2 target makes REALITY handshake tests deterministic.
-        subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(work / 'key.pem'),
-                        '-out', str(work / 'cert.pem'), '-days', '1', '-subj', '/CN=www.samsung.com',
-                        '-addext', 'subjectAltName=DNS:www.samsung.com'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         target = http.server.ThreadingHTTPServer(('127.0.0.1', 0), HTTP)
         tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         tls.minimum_version = ssl.TLSVersion.TLSv1_3
@@ -171,6 +176,8 @@ def main():
         target.socket = tls.wrap_socket(target.socket, server_side=True)
         servers.append(start_server(target))
         for tag, _, stream_json in inbounds:
+            if tag == '默认HY2直连':
+                continue
             stream = json.loads(stream_json)
             stream['realitySettings']['target'] = f'127.0.0.1:{target.server_address[1]}'
             database.execute('UPDATE inbounds SET stream_settings=? WHERE tag=?', (json.dumps(stream), tag))
@@ -186,7 +193,7 @@ def main():
             if outbound['tag'] == '默认':
                 outbound['settings'] = {'address': '127.0.0.1', 'port': socks.server_address[1], 'user': 'fixture-user', 'pass': 'fixture-password'}
         values = {'xrayTemplateConfig': json.dumps(config), 'webPort': str(panel_port), 'webListen': '127.0.0.1',
-                  'webBasePath': '/', 'subPort': str(subscription_port), 'subListen': '127.0.0.1'}
+                  'webBasePath': '/', 'webCertFile': '', 'webKeyFile': '', 'subCertFile': '', 'subKeyFile': '', 'subPort': str(subscription_port), 'subListen': '127.0.0.1'}
         for key, value in values.items():
             if database.execute('UPDATE settings SET value=? WHERE key=?', (value, key)).rowcount == 0:
                 database.execute('INSERT INTO settings(key,value) VALUES (?,?)', (key, value))
@@ -209,7 +216,9 @@ def main():
                 raise RuntimeError('Panel did not become ready')
             with opener.open(f'http://127.0.0.1:{subscription_port}{clash_path}{result["subscriptionId"]}', timeout=10) as response:
                 subscription = response.read().decode()
-                assert subscription.count('type: vless') == 2
+                assert subscription.count('type: vless') == 3
+                assert subscription.count('type: hysteria2') == 1
+                assert '2001:db8::10' in subscription
                 assert '自建-直连' in subscription and '自建-住宅' in subscription
                 assert 'kjxv' not in subscription.lower()
                 assert 'reality-opts:' in subscription and 'MATCH,PROXY' in subscription
@@ -219,18 +228,25 @@ def main():
             assert before == database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY tag').fetchall()
             assert saved_template == database.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'").fetchone()[0]
             client_ports = []
-            for index, (_, settings_json, stream_json) in enumerate(inbounds):
+            for index, (tag, settings_json, stream_json) in enumerate(inbounds):
                 stream = json.loads(stream_json)
                 client = json.loads(settings_json)['clients'][0]
                 local_port = port()
                 client_ports.append(local_port)
-                reality = stream['realitySettings']
+                reality = stream.get('realitySettings', {})
                 client_config = {'log': {'loglevel': 'error'},
                     'inbounds': [{'listen':'127.0.0.1', 'port':local_port, 'protocol':'socks', 'settings':{'udp':False}}],
-                    'outbounds': [{'protocol':'vless', 'settings':{'address':'127.0.0.1', 'port':direct_port if index == 0 else residential_port,
+                    'outbounds': [{'protocol':'vless', 'settings':{'address':'::1' if index == 2 else '127.0.0.1', 'port':[direct_port, residential_port, result['ipv6Port'], result['hy2Port']][index],
                         'id':client['id'], 'flow':client['flow'], 'encryption':'none'},
                         'streamSettings': {'network':'tcp', 'security':'reality', 'realitySettings':{'serverName':'www.samsung.com',
                             'publicKey':reality['settings']['publicKey'], 'shortId':reality['shortIds'][0], 'fingerprint':'chrome'}}}]}
+                if tag == '默认HY2直连':
+                    client_config['outbounds'] = [{'protocol': 'hysteria',
+                        'settings': {'version': 2, 'address': '127.0.0.1', 'port': result['hy2Port']},
+                        'streamSettings': {'network': 'hysteria', 'security': 'tls',
+                            'hysteriaSettings': {'version': 2, 'auth': client['auth']},
+                            'tlsSettings': {'serverName': '127.0.0.1', 'alpn': ['h3'], 'disableSystemRoot': True,
+                                'certificates': [{'certificateFile': str(work / 'cert.pem'), 'usage': 'verify'}]}}}]
                 path = work / f'client-{index}.json'
                 path.write_text(json.dumps(client_config))
                 subprocess.run([core, 'run', '-test', '-c', str(path)], env=env, check=True, stdout=subprocess.DEVNULL)
@@ -238,6 +254,9 @@ def main():
             time.sleep(1)
             assert b'preset-route-ok' in http_through_socks(client_ports[0], http_fixture.server_address[1])
             assert Socks.connections == 0, 'Direct node used residential SOCKS'
+            assert b'preset-route-ok' in http_through_socks(client_ports[2], http_fixture.server_address[1])
+            assert b'preset-route-ok' in http_through_socks(client_ports[3], http_fixture.server_address[1])
+            assert Socks.connections == 0, 'IPv6 or HY2 used residential SOCKS'
             assert b'preset-route-ok' in http_through_socks(client_ports[1], http_fixture.server_address[1])
             assert Socks.connections == 1, 'Residential node bypassed residential SOCKS'
             socks.shutdown()
@@ -249,7 +268,7 @@ def main():
                 failed = True
             assert failed, 'Residential node silently fell back to direct'
             assert b'preset-route-ok' in http_through_socks(client_ports[0], http_fixture.server_address[1])
-            print('PASS: actual REALITY/VLESS connections, authenticated residential SOCKS, failure isolation, two-node Clash subscription, repeated initialization.')
+            print('PASS: actual REALITY/VLESS connections, authenticated residential SOCKS, failure isolation, IPv6 REALITY and certificate-verified HY2, four-node Clash subscription, repeated initialization.')
         except Exception:
             log.flush()
             print((work / 'runtime.log').read_text(errors='replace')[-6000:])

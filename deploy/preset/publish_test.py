@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 SCRIPT = Path(__file__).with_name('publish.sh').resolve()
-TAG = 'v3.10.2-preset'
+TAG = 'v3.10.2-preset-ipv6-hy2'
 SHA = 'a' * 40
 OLD_SHA = 'b' * 40
 PACKAGES = [f'x-ui-linux-{arch}.tar.gz' for arch in ('amd64', 'arm64', 'armv7', 'armv6', 'armv5', '386', 's390x')] + ['x-ui-windows-amd64.zip']
@@ -31,16 +31,16 @@ if args[0]=='api':
     assert endpoint.startswith('repos/kjxv/3x-ui/')
     method=option('--method') if '--method' in args else 'GET'
     if method=='GET':
-        if endpoint.endswith('/git/ref/heads/codex/v3.10.2-preset'):
+        if endpoint.endswith('/git/ref/heads/codex/v3.10.2-preset-ipv6-hy2'):
             print(os.environ['GITHUB_SHA'])
-        elif endpoint.endswith('/git/ref/tags/v3.10.2-preset'):
+        elif endpoint.endswith('/git/ref/tags/v3.10.2-preset-ipv6-hy2'):
             print(state['ref'])
-        elif endpoint.endswith('/releases/tags/v3.10.2-preset'):
+        elif endpoint.endswith('/releases/tags/v3.10.2-preset-ipv6-hy2'):
             print(json.dumps(state['release']))
         else:
             raise RuntimeError(endpoint)
     elif method=='PATCH':
-        if endpoint.endswith('/git/refs/tags/v3.10.2-preset'):
+        if endpoint.endswith('/git/refs/tags/v3.10.2-preset-ipv6-hy2'):
             state['ref']=option('-f').split('=',1)[1]
         elif endpoint.endswith('/releases/123'):
             payload=json.loads(pathlib.Path(option('--input')).read_text(encoding='utf-8'))
@@ -52,15 +52,15 @@ if args[0]=='api':
     else:
         raise RuntimeError(method)
 elif args[:2]==['release','download']:
-    assert args[2]=='v3.10.2-preset'
+    assert args[2]=='v3.10.2-preset-ipv6-hy2'
     dest=pathlib.Path(option('--dir'))
     for source in (state_dir/'assets').iterdir(): shutil.copyfile(source,dest/source.name)
 elif args[:2]==['release','edit']:
-    assert args[2]=='v3.10.2-preset' and '--draft=true' in args
+    assert args[2]=='v3.10.2-preset-ipv6-hy2' and '--draft=true' in args
     state['release']['draft']=True
     save()
 elif args[:2]==['release','upload']:
-    assert args[2]=='v3.10.2-preset' and '--clobber' in args
+    assert args[2]=='v3.10.2-preset-ipv6-hy2' and '--clobber' in args
     files=args[3:args.index('--repo')]
     for i,value in enumerate(files):
         p=pathlib.Path(value)

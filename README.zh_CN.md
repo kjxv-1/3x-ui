@@ -76,7 +76,7 @@
 在 Linux VPS 上以 root 运行，安装本仓库基于 **3X-UI 3.10.2** 的默认节点版，内核固定为 **Xray v26.6.27**：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
 首次安装自动创建 **自建-直连**、**自建-住宅** 两个 VLESS + REALITY 节点，使用不同的随机空闲端口，并开启 Clash/Mihomo 订阅。
@@ -119,7 +119,7 @@ systemctl restart x-ui
 Build this fork's image locally before starting the container:
 
 ```bash
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset
+docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
 ```
 
 默认的 `docker compose up -d` 仍使用 SQLite。若要使用捆绑的 PostgreSQL 服务运行，请取消注释 `docker-compose.yml` 中的两行 `XUI_DB_*` 环境变量，并使用该 profile 启动：
