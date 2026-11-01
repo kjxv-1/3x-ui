@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -27,7 +28,8 @@ func tutorialTestCertificate(t *testing.T) (string, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	leaf := &x509.Certificate{SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "preset.example"},
+	leaf := &x509.Certificate{
+		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "preset.example"},
 		DNSNames: []string{"preset.example"}, IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
 		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
@@ -148,5 +150,17 @@ func TestTutorialPresetHY2MissingCertificateAndInvalidIPv6(t *testing.T) {
 	defer udp.Close()
 	if _, err := tutorialUDPPort(udp.LocalAddr().(*net.UDPAddr).Port, map[int]bool{}); err == nil {
 		t.Fatal("occupied UDP port accepted")
+	}
+}
+
+func TestTutorialPresetRejectsOccupiedIPv6Port(t *testing.T) {
+	var listenerConfig net.ListenConfig
+	listener, err := listenerConfig.Listen(context.Background(), "tcp6", "[::1]:0")
+	if err != nil {
+		t.Skip("IPv6 sockets unavailable on this host")
+	}
+	defer listener.Close()
+	if _, err := tutorialIPv6Port(listener.Addr().(*net.TCPAddr).Port, true, map[int]bool{}); err == nil {
+		t.Fatal("occupied IPv6 port accepted")
 	}
 }

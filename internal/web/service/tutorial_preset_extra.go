@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -47,11 +48,12 @@ func tutorialIsPublicIPv6(ip net.IP) bool {
 }
 
 func tutorialUDPPort(requested int, used map[int]bool) (int, error) {
+	var listenerConfig net.ListenConfig
 	for range 64 {
 		if requested != 0 && used[requested] {
 			return 0, fmt.Errorf("preset port %d is already in use", requested)
 		}
-		connection, err := net.ListenPacket("udp4", net.JoinHostPort("0.0.0.0", strconv.Itoa(requested)))
+		connection, err := listenerConfig.ListenPacket(context.Background(), "udp4", net.JoinHostPort("0.0.0.0", strconv.Itoa(requested)))
 		if err != nil {
 			return 0, err
 		}
@@ -62,6 +64,29 @@ func tutorialUDPPort(requested int, used map[int]bool) (int, error) {
 		}
 	}
 	return 0, errors.New("cannot reserve a distinct HY2 UDP port")
+}
+
+// Check the IPv6 socket itself when the IPv6 node will be enabled.
+func tutorialIPv6Port(requested int, enabled bool, used map[int]bool) (int, error) {
+	if !enabled {
+		return tutorialPresetPort(requested, nil, used)
+	}
+	var listenerConfig net.ListenConfig
+	for range 64 {
+		if requested != 0 && used[requested] {
+			return 0, fmt.Errorf("preset port %d is already in use", requested)
+		}
+		listener, err := listenerConfig.Listen(context.Background(), "tcp6", net.JoinHostPort("::", strconv.Itoa(requested)))
+		if err != nil {
+			return 0, err
+		}
+		port := listener.Addr().(*net.TCPAddr).Port
+		_ = listener.Close()
+		if !used[port] {
+			return port, nil
+		}
+	}
+	return 0, errors.New("cannot reserve a distinct IPv6 TCP port")
 }
 
 // Reuse renewable panel certificate files; never export an insecure TLS flag.

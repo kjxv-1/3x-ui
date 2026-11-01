@@ -126,7 +126,11 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 			return err
 		}
 		used[residentialPort] = true
-		ipv6Port, err := tutorialPresetPort(opts.IPv6Port, nil, used)
+		ipv6Address := opts.PublicIPv6Address
+		if ipv6Address == "" {
+			ipv6Address = tutorialPublicIPv6()
+		}
+		ipv6Port, err := tutorialIPv6Port(opts.IPv6Port, ipv6Address != "", used)
 		if err != nil {
 			return err
 		}
@@ -134,10 +138,6 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		hy2Port, err := tutorialUDPPort(opts.HY2Port, used)
 		if err != nil {
 			return err
-		}
-		ipv6Address := opts.PublicIPv6Address
-		if ipv6Address == "" {
-			ipv6Address = tutorialPublicIPv6()
 		}
 		hy2Stream, hy2Enabled, err := tutorialHY2Stream(cert, key, opts.PublicAddress)
 		if err != nil {
@@ -285,7 +285,8 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 				return err
 			}
 		}
-		*result = TutorialPresetResult{Version: config.GetBaseVersion(), DirectPort: directPort, ResidentialPort: residentialPort,
+		*result = TutorialPresetResult{
+			Version: config.GetBaseVersion(), DirectPort: directPort, ResidentialPort: residentialPort,
 			IPv6Port: ipv6Port, HY2Port: hy2Port, IPv6Address: ipv6Address, IPv6Enabled: ipv6Address != "", HY2Enabled: hy2Enabled,
 			SubscriptionID: subID, RealityServerName: serverName, RealityLatencyMs: latencyMs}
 		if ipv6Address == "" {

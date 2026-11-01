@@ -233,13 +233,16 @@ def main():
                 client = json.loads(settings_json)['clients'][0]
                 local_port = port()
                 client_ports.append(local_port)
-                reality = stream.get('realitySettings', {})
                 client_config = {'log': {'loglevel': 'error'},
-                    'inbounds': [{'listen':'127.0.0.1', 'port':local_port, 'protocol':'socks', 'settings':{'udp':False}}],
-                    'outbounds': [{'protocol':'vless', 'settings':{'address':'::1' if index == 2 else '127.0.0.1', 'port':[direct_port, residential_port, result['ipv6Port'], result['hy2Port']][index],
-                        'id':client['id'], 'flow':client['flow'], 'encryption':'none'},
-                        'streamSettings': {'network':'tcp', 'security':'reality', 'realitySettings':{'serverName':'www.samsung.com',
-                            'publicKey':reality['settings']['publicKey'], 'shortId':reality['shortIds'][0], 'fingerprint':'chrome'}}}]}
+                    'inbounds': [{'listen':'127.0.0.1', 'port':local_port, 'protocol':'socks', 'settings':{'udp':False}}]}
+                if tag != '默认HY2直连':
+                    reality = stream.get('realitySettings', {})
+                    client_config = {'log': {'loglevel': 'error'},
+                        'inbounds': [{'listen':'127.0.0.1', 'port':local_port, 'protocol':'socks', 'settings':{'udp':False}}],
+                        'outbounds': [{'protocol':'vless', 'settings':{'address':'::1' if index == 2 else '127.0.0.1', 'port':[direct_port, residential_port, result['ipv6Port'], result['hy2Port']][index],
+                            'id':client['id'], 'flow':client['flow'], 'encryption':'none'},
+                            'streamSettings': {'network':'tcp', 'security':'reality', 'realitySettings':{'serverName':'www.samsung.com',
+                                'publicKey':reality['settings']['publicKey'], 'shortId':reality['shortIds'][0], 'fingerprint':'chrome'}}}]}
                 if tag == '默认HY2直连':
                     client_config['outbounds'] = [{'protocol': 'hysteria',
                         'settings': {'version': 2, 'address': '127.0.0.1', 'port': result['hy2Port']},
