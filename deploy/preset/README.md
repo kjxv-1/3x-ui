@@ -16,10 +16,10 @@ bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ip
 
 | 名称 | 配置 | 默认出站 |
 | --- | --- | --- |
-| 自建-直连 | VLESS + TCP + REALITY / Vision，IPv4 分享地址 | VPS 直连 |
-| 自建-住宅 | VLESS + TCP + REALITY / Vision | 住宅 Socks5 出站“默认” |
-| 自建-IPv6直连 | VLESS + TCP + REALITY / Vision，IPv6-only 监听，独立 IPv6 分享地址 | VPS 直连 |
-| 自建-HY2 | Hysteria 2 + QUIC/UDP + TLS | VPS 直连 |
+| IPv4-直连 | VLESS + TCP + REALITY / Vision，IPv4 分享地址 | VPS 直连 |
+| IPv6-直连 | VLESS + TCP + REALITY / Vision，IPv6-only 监听，独立 IPv6 分享地址 | VPS 直连 |
+| Hy2-直连 | Hysteria 2 + QUIC/UDP + TLS | VPS 直连 |
+| 住宅-待配置 | VLESS + TCP + REALITY / Vision | 住宅 Socks5 出站“默认” |
 
 四个入站共用一个邮箱为 **01** 的客户端及同一订阅 ID。UUID、HY2 认证密码、各 REALITY 密钥及 Short ID 都随机生成。VLESS 最小客户端版本为 1.0.0。订阅服务及 Clash/Mihomo 订阅默认开启，节点备注不含个人名称。
 

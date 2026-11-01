@@ -76,8 +76,12 @@ func TestTutorialPresetIPv6AndHY2UseOneClientAndDistinctRoutes(t *testing.T) {
 	if len(inbounds) != 4 {
 		t.Fatalf("got %d inbounds", len(inbounds))
 	}
+	names := []string{"IPv4-直连", "IPv6-直连", "Hy2-直连", "住宅-待配置"}
 	ports := map[int]bool{}
-	for _, inbound := range inbounds {
+	for index, inbound := range inbounds {
+		if inbound.Remark != names[index] || inbound.SubSortIndex != index+1 {
+			t.Fatalf("unexpected node name or order: %s (%d)", inbound.Remark, inbound.SubSortIndex)
+		}
 		if !inbound.Enable || inbound.ExcludeFromSub || ports[inbound.Port] {
 			t.Fatalf("invalid inbound state: %s", inbound.Tag)
 		}
@@ -91,7 +95,7 @@ func TestTutorialPresetIPv6AndHY2UseOneClientAndDistinctRoutes(t *testing.T) {
 			t.Fatalf("%s: %v", inbound.Tag, err)
 		}
 	}
-	v6, hy2 := inbounds[2], inbounds[3]
+	v6, hy2 := inbounds[1], inbounds[2]
 	if v6.Tag != TutorialIPv6Tag || v6.Listen != "::" || v6.ShareAddr != "2001:db8::10" || v6.ShareAddrStrategy != "custom" {
 		t.Fatal("IPv6 endpoint fell back to IPv4")
 	}

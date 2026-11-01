@@ -146,7 +146,7 @@ def main():
         result = json.loads(database.execute("SELECT value FROM settings WHERE key='tutorialPresetV1'").fetchone()[0])
         clash_path = database.execute("SELECT value FROM settings WHERE key='subClashPath'").fetchone()[0]
         inbounds = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY sub_sort_index').fetchall()
-        assert [row[0] for row in inbounds] == ['默认直连', '默认住宅', '默认IPv6直连', '默认HY2直连']
+        assert [row[0] for row in inbounds] == ['默认直连', '默认IPv6直连', '默认HY2直连', '默认住宅']
         assert 'kjxv' not in json.dumps(inbounds).lower()
         records = database.execute('SELECT id,email,uuid,sub_id FROM clients').fetchall()
         assert len(records) == 1 and records[0][1] == '01'
@@ -219,7 +219,8 @@ def main():
                 assert subscription.count('type: vless') == 3
                 assert subscription.count('type: hysteria2') == 1
                 assert '2001:db8::10' in subscription
-                assert '自建-直连' in subscription and '自建-住宅' in subscription
+                positions = [subscription.index(name) for name in ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']]
+                assert positions == sorted(positions), 'Unexpected subscription node order'
                 assert 'kjxv' not in subscription.lower()
                 assert 'reality-opts:' in subscription and 'MATCH,PROXY' in subscription
             before = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY tag').fetchall()
@@ -239,7 +240,7 @@ def main():
                     reality = stream.get('realitySettings', {})
                     client_config = {'log': {'loglevel': 'error'},
                         'inbounds': [{'listen':'127.0.0.1', 'port':local_port, 'protocol':'socks', 'settings':{'udp':False}}],
-                        'outbounds': [{'protocol':'vless', 'settings':{'address':'::1' if index == 2 else '127.0.0.1', 'port':[direct_port, residential_port, result['ipv6Port'], result['hy2Port']][index],
+                        'outbounds': [{'protocol':'vless', 'settings':{'address':'::1' if index == 1 else '127.0.0.1', 'port':[direct_port, result['ipv6Port'], result['hy2Port'], residential_port][index],
                             'id':client['id'], 'flow':client['flow'], 'encryption':'none'},
                             'streamSettings': {'network':'tcp', 'security':'reality', 'realitySettings':{'serverName':'www.samsung.com',
                                 'publicKey':reality['settings']['publicKey'], 'shortId':reality['shortIds'][0], 'fingerprint':'chrome'}}}]}
@@ -257,16 +258,16 @@ def main():
             time.sleep(1)
             assert b'preset-route-ok' in http_through_socks(client_ports[0], http_fixture.server_address[1])
             assert Socks.connections == 0, 'Direct node used residential SOCKS'
-            assert b'preset-route-ok' in http_through_socks(client_ports[2], http_fixture.server_address[1])
-            assert b'preset-route-ok' in http_through_socks(client_ports[3], http_fixture.server_address[1])
-            assert Socks.connections == 0, 'IPv6 or HY2 used residential SOCKS'
             assert b'preset-route-ok' in http_through_socks(client_ports[1], http_fixture.server_address[1])
+            assert b'preset-route-ok' in http_through_socks(client_ports[2], http_fixture.server_address[1])
+            assert Socks.connections == 0, 'IPv6 or HY2 used residential SOCKS'
+            assert b'preset-route-ok' in http_through_socks(client_ports[3], http_fixture.server_address[1])
             assert Socks.connections == 1, 'Residential node bypassed residential SOCKS'
             socks.shutdown()
             socks.server_close()
             failed = False
             try:
-                failed = b'preset-route-ok' not in http_through_socks(client_ports[1], http_fixture.server_address[1])
+                failed = b'preset-route-ok' not in http_through_socks(client_ports[3], http_fixture.server_address[1])
             except (OSError, ConnectionError):
                 failed = True
             assert failed, 'Residential node silently fell back to direct'

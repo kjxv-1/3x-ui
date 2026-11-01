@@ -100,7 +100,7 @@ path=sqlite3.connect("/etc/x-ui/x-ui.db").execute("SELECT value FROM settings WH
 with urllib.request.urlopen("http://127.0.0.1:2096"+path+result["subscriptionId"],timeout=10) as r:
     text=r.read().decode()
     assert text.count("type: vless") == 2 + int(result["ipv6Enabled"]), "Unexpected Clash body: " + repr(text[:3000])
-    assert "自建-直连" in text and "自建-住宅" in text
+    assert "IPv4-直连" in text and "住宅-待配置" in text
 PY
 kill "$panel_pid"
 wait "$panel_pid" || true

@@ -217,10 +217,10 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 			tag, name string
 			port      int
 		}{
-			{TutorialDirectTag, "自建-直连", directPort},
-			{TutorialResidentialTag, "自建-住宅", residentialPort},
-			{TutorialIPv6Tag, "自建-IPv6直连", ipv6Port},
-			{TutorialHY2Tag, "自建-HY2", hy2Port},
+			{TutorialDirectTag, "IPv4-直连", directPort},
+			{TutorialIPv6Tag, "IPv6-直连", ipv6Port},
+			{TutorialHY2Tag, "Hy2-直连", hy2Port},
+			{TutorialResidentialTag, "住宅-待配置", residentialPort},
 		} {
 			settings, err := json.Marshal(map[string]any{"clients": []model.Client{client}, "decryption": "none", "fallbacks": []any{}})
 			if err != nil {

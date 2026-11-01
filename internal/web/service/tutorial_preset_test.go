@@ -23,7 +23,7 @@ func TestTutorialPresetCreatesFourSubscriptionNodeDefinitions(t *testing.T) {
 	if err := db.Order("sub_sort_index").Find(&inbounds).Error; err != nil {
 		t.Fatal(err)
 	}
-	if len(inbounds) != 4 || inbounds[0].Tag != TutorialDirectTag || inbounds[1].Tag != TutorialResidentialTag {
+	if len(inbounds) != 4 || inbounds[0].Tag != TutorialDirectTag || inbounds[3].Tag != TutorialResidentialTag {
 		t.Fatalf("unexpected inbounds: %+v", inbounds)
 	}
 	if result.DirectPort == result.ResidentialPort || result.SubscriptionID == "" {
@@ -31,7 +31,7 @@ func TestTutorialPresetCreatesFourSubscriptionNodeDefinitions(t *testing.T) {
 	}
 	privateKeys := map[string]bool{}
 	clientIDs := map[string]bool{}
-	for _, inbound := range inbounds[:2] {
+	for _, inbound := range []model.Inbound{inbounds[0], inbounds[3]} {
 		if !inbound.Enable || inbound.ShareAddr != "203.0.113.10" {
 			t.Fatal("node is disabled or has wrong public address")
 		}

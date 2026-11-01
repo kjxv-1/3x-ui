@@ -142,6 +142,6 @@ with urllib.request.urlopen('https://127.0.0.1:2096'+settings['subClashPath']+re
     text=response.read().decode()
     assert text.count('type: vless') == 2 + int(result['ipv6Enabled'])
     assert text.count('type: hysteria2') == 1
-    assert '自建-直连' in text and '自建-住宅' in text
+    assert 'IPv4-直连' in text and '住宅-待配置' in text
 PY
 echo 'PASS: fresh IP-certificate installer restores bundle directory, creates two nodes, installs service, and serves HTTPS panel and Clash subscription'
