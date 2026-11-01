@@ -288,7 +288,8 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		*result = TutorialPresetResult{
 			Version: config.GetBaseVersion(), DirectPort: directPort, ResidentialPort: residentialPort,
 			IPv6Port: ipv6Port, HY2Port: hy2Port, IPv6Address: ipv6Address, IPv6Enabled: ipv6Address != "", HY2Enabled: hy2Enabled,
-			SubscriptionID: subID, RealityServerName: serverName, RealityLatencyMs: latencyMs}
+			SubscriptionID: subID, RealityServerName: serverName, RealityLatencyMs: latencyMs,
+		}
 		if ipv6Address == "" {
 			result.Warnings = append(result.Warnings, "IPv6 node is disabled and excluded from subscriptions: no public server IPv6 was found. Configure server IPv6 and this node's custom share address before enabling it.")
 		}

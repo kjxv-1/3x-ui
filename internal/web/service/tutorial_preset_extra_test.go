@@ -32,7 +32,8 @@ func tutorialTestCertificate(t *testing.T) (string, string) {
 		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "preset.example"},
 		DNSNames: []string{"preset.example"}, IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
-		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}
+		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
 	der, err := x509.CreateCertificate(rand.Reader, leaf, leaf, &key.PublicKey, key)
 	if err != nil {
 		t.Fatal(err)
