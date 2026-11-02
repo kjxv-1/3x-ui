@@ -155,8 +155,18 @@ def main():
         assert len(records) == 1 and records[0][1] == '01'
         attachments = database.execute('SELECT inbound_id FROM client_inbounds WHERE client_id=?', (records[0][0],)).fetchall()
         assert len(attachments) == 4
+        # Exercise the same limited subscription used in the user's client.
+        limit = 10 * 1024**3
+        expiry_ms = (int(time.time()) + 30 * 86400) * 1000
+        expiry_date = time.strftime('%Y-%m-%d', time.localtime(expiry_ms / 1000))
+        database.execute('UPDATE clients SET total_gb=?, expiry_time=? WHERE id=?', (limit, expiry_ms, records[0][0]))
+        database.execute('UPDATE client_traffics SET total=?, expiry_time=?, up=?, down=? WHERE email=?',
+                         (limit, expiry_ms, 1024**3, 2 * 1024**3, records[0][1]))
         for tag, settings_json, stream_json in inbounds:
-            client = json.loads(settings_json)['clients'][0]
+            settings = json.loads(settings_json)
+            client = settings['clients'][0]
+            client['totalGB'], client['expiryTime'] = limit, expiry_ms
+            database.execute('UPDATE inbounds SET settings=? WHERE tag=?', (json.dumps(settings), tag))
             assert client['email'] == '01' and client['id'] == records[0][2] and client['subId'] == result['subscriptionId']
             if tag == '默认HY2直连':
                 assert len(client['auth']) == 64
@@ -222,7 +232,7 @@ def main():
                 assert subscription.count('type: vless') == 3
                 assert subscription.count('type: hysteria2') == 1
                 assert subscription.count('type: socks5') == 1
-                assert '📊 剩余流量：' in subscription and '📅 到期：' in subscription
+                assert '📊 剩余流量：7.00GB' in subscription and f'📅 到期：{expiry_date}' in subscription
                 assert '2001:db8::10' in subscription
                 positions = [subscription.index(name) for name in ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']]
                 assert positions == sorted(positions), 'Unexpected subscription node order'
@@ -235,7 +245,7 @@ def main():
                 raw_links = base64.b64decode(response.read()).decode().splitlines()
                 assert len(raw_links) == 5 and raw_links[0].startswith('socks://')
                 raw_names = [urllib.parse.unquote(urllib.parse.urlsplit(link).fragment).strip() for link in raw_links]
-                assert '📊 剩余流量：' in raw_names[0] and '📅 到期：' in raw_names[0]
+                assert '📊 剩余流量：7.00GB' in raw_names[0] and f'📅 到期：{expiry_date}' in raw_names[0]
                 assert raw_names[1:] == ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']
             before = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY tag').fetchall()
             saved_template = database.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'").fetchone()[0]

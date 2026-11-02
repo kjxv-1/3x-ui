@@ -82,6 +82,9 @@ for row in c.execute("SELECT settings,stream_settings FROM inbounds"):
 sub_ids=[json.loads(row[0])["clients"][0]["subId"] for row in c.execute("SELECT settings FROM inbounds")]
 assert sub_ids == [result["subscriptionId"]] * 4
 assert c.execute("SELECT value FROM settings WHERE key=?",("subClashEnable",)).fetchone()[0] == "true"
+assert c.execute("SELECT value FROM settings WHERE key=?",("subInfoNodeEnable",)).fetchone()[0] == "true"
+template=c.execute("SELECT value FROM settings WHERE key=?",("remarkTemplate",)).fetchone()[0]
+assert "📊 剩余流量：" in template and "📅 到期：" in template
 PY
 cd /usr/local/x-ui
 ./x-ui > /tmp/panel.log 2>&1 &
@@ -101,8 +104,6 @@ with urllib.request.urlopen("http://127.0.0.1:2096"+path+result["subscriptionId"
     text=r.read().decode()
     assert text.count("type: vless") == 2 + int(result["ipv6Enabled"]), "Unexpected Clash body: " + repr(text[:3000])
     assert "IPv4-直连" in text and "住宅-待配置" in text
-    assert text.count("type: socks5") == 1
-    assert "📊 剩余流量：" in text and "📅 到期：" in text
 PY
 kill "$panel_pid"
 wait "$panel_pid" || true
