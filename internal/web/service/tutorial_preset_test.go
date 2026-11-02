@@ -75,7 +75,7 @@ func TestTutorialPresetCreatesFourSubscriptionNodeDefinitions(t *testing.T) {
 			t.Fatal("default client attachment is missing")
 		}
 	}
-	for _, settingKey := range []string{"subEnable", "subClashEnable"} {
+	for _, settingKey := range []string{"subEnable", "subClashEnable", "subInfoNodeEnable"} {
 		value, err := (&SettingService{}).getString(settingKey)
 		if err != nil || value != "true" {
 			t.Fatalf("%s was not enabled: %q %v", settingKey, value, err)
@@ -111,8 +111,11 @@ func TestTutorialPresetRepeatedApplyPreservesEditsAndDeletedNode(t *testing.T) {
 	if err := db.Where("tag = ?", TutorialDirectTag).Delete(&model.Inbound{}).Error; err != nil {
 		t.Fatal(err)
 	}
-	if err := (&SettingService{}).saveSetting("subClashEnable", "false"); err != nil {
-		t.Fatal(err)
+	customSettings := map[string]string{"subClashEnable": "false", "subInfoNodeEnable": "false", "remarkTemplate": "{{INBOUND}}"}
+	for key, value := range customSettings {
+		if err := (&SettingService{}).saveSetting(key, value); err != nil {
+			t.Fatal(err)
+		}
 	}
 	originalTemplate, _ := (&SettingService{}).GetXrayConfigTemplate()
 	var parsed map[string]any
@@ -138,9 +141,11 @@ func TestTutorialPresetRepeatedApplyPreservesEditsAndDeletedNode(t *testing.T) {
 	if actual != string(modified) {
 		t.Fatal("saved residential credentials were overwritten")
 	}
-	value, _ := (&SettingService{}).getString("subClashEnable")
-	if value != "false" {
-		t.Fatal("user's subscription setting was overwritten")
+	for key, expected := range customSettings {
+		value, err := (&SettingService{}).getString(key)
+		if err != nil || value != expected {
+			t.Fatalf("user's subscription setting %s was overwritten: %q, %v", key, value, err)
+		}
 	}
 	var count int64
 	db.Model(&model.Inbound{}).Count(&count)

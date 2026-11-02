@@ -134,6 +134,7 @@ for settings_json,stream_json in c.execute('SELECT settings,stream_settings FROM
     assert reality['minClientVer'] == '1.0.0' and reality['serverNames'] == ['www.samsung.com']
 settings=dict(c.execute('SELECT key,value FROM settings'))
 assert settings['subEnable'] == settings['subClashEnable'] == 'true'
+assert settings['subInfoNodeEnable'] == 'true'
 assert settings['subCertFile'] == settings['webCertFile']
 assert settings['subKeyFile'] == settings['webKeyFile']
 result=json.load(open('/etc/x-ui/preset-result.json'))
@@ -143,5 +144,7 @@ with urllib.request.urlopen('https://127.0.0.1:2096'+settings['subClashPath']+re
     assert text.count('type: vless') == 2 + int(result['ipv6Enabled'])
     assert text.count('type: hysteria2') == 1
     assert 'IPv4-直连' in text and '住宅-待配置' in text
+    assert text.count('type: socks5') == 1
+    assert '📊 剩余流量：' in text and '📅 到期：' in text
 PY
 echo 'PASS: fresh IP-certificate installer restores bundle directory, creates two nodes, installs service, and serves HTTPS panel and Clash subscription'

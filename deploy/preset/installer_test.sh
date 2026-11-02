@@ -101,6 +101,8 @@ with urllib.request.urlopen("http://127.0.0.1:2096"+path+result["subscriptionId"
     text=r.read().decode()
     assert text.count("type: vless") == 2 + int(result["ipv6Enabled"]), "Unexpected Clash body: " + repr(text[:3000])
     assert "IPv4-直连" in text and "住宅-待配置" in text
+    assert text.count("type: socks5") == 1
+    assert "📊 剩余流量：" in text and "📅 到期：" in text
 PY
 kill "$panel_pid"
 wait "$panel_pid" || true
@@ -116,7 +118,7 @@ c.execute("UPDATE settings SET value=? WHERE key=?",(json.dumps(config),"xrayTem
 c.execute("UPDATE settings SET value=? WHERE key=?",("false","subClashEnable"))
 c.commit()
 snapshot={"nodes":c.execute("SELECT tag,settings,stream_settings FROM inbounds ORDER BY tag").fetchall(),
-          "settings":c.execute("SELECT key,value FROM settings WHERE key IN (?,?,?) ORDER BY key",("xrayTemplateConfig","subClashEnable","tutorialPresetV1")).fetchall()}
+          "settings":c.execute("SELECT key,value FROM settings WHERE key IN (?,?,?,?,?) ORDER BY key",("xrayTemplateConfig","subClashEnable","tutorialPresetV1","subInfoNodeEnable","remarkTemplate")).fetchall()}
 json.dump(snapshot,open("/tmp/before.json","w"))
 PY
 bash /source/install.sh > /tmp/reinstall.log 2>&1 || { tail -n 60 /tmp/reinstall.log; exit 1; }
@@ -124,7 +126,7 @@ python3 - <<"PY"
 import json,sqlite3
 c=sqlite3.connect("/etc/x-ui/x-ui.db")
 snapshot={"nodes":c.execute("SELECT tag,settings,stream_settings FROM inbounds ORDER BY tag").fetchall(),
-          "settings":c.execute("SELECT key,value FROM settings WHERE key IN (?,?,?) ORDER BY key",("xrayTemplateConfig","subClashEnable","tutorialPresetV1")).fetchall()}
+          "settings":c.execute("SELECT key,value FROM settings WHERE key IN (?,?,?,?,?) ORDER BY key",("xrayTemplateConfig","subClashEnable","tutorialPresetV1","subInfoNodeEnable","remarkTemplate")).fetchall()}
 before=json.load(open("/tmp/before.json"))
 def canonical(snapshot):
     nodes=[]

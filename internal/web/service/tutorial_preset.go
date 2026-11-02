@@ -274,7 +274,8 @@ func ApplyTutorialPreset(opts TutorialPresetOptions) (*TutorialPresetResult, err
 		}
 		values := map[string]string{
 			"xrayTemplateConfig": string(encodedTemplate), "subEnable": "true",
-			"subClashEnable": "true", "devChannelEnable": "false", "remarkTemplate": "{{INBOUND}}",
+			"subClashEnable": "true", "devChannelEnable": "false", "subInfoNodeEnable": "true",
+			"remarkTemplate": "{{INBOUND}} | 📊 剩余流量：{{TRAFFIC_LEFT}} | 📅 到期：{{EXPIRE_DATE}}",
 		}
 		if cert != "" && key != "" {
 			values["subCertFile"] = cert

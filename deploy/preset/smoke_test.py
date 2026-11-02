@@ -4,6 +4,7 @@ The fixture only permits loopback HTTP destinations inside its temporary DB;
 the delivered profile's private-address protection is asserted by Go tests.
 """
 import argparse
+import base64
 import contextlib
 import http.server
 import json
@@ -20,6 +21,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.parse
 import urllib.request
 
 
@@ -145,6 +147,7 @@ def main():
         database = sqlite3.connect(work / 'x-ui.db')
         result = json.loads(database.execute("SELECT value FROM settings WHERE key='tutorialPresetV1'").fetchone()[0])
         clash_path = database.execute("SELECT value FROM settings WHERE key='subClashPath'").fetchone()[0]
+        raw_path = database.execute("SELECT value FROM settings WHERE key='subPath'").fetchone()[0]
         inbounds = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY sub_sort_index').fetchall()
         assert [row[0] for row in inbounds] == ['默认直连', '默认IPv6直连', '默认HY2直连', '默认住宅']
         assert 'kjxv' not in json.dumps(inbounds).lower()
@@ -218,11 +221,22 @@ def main():
                 subscription = response.read().decode()
                 assert subscription.count('type: vless') == 3
                 assert subscription.count('type: hysteria2') == 1
+                assert subscription.count('type: socks5') == 1
+                assert '📊 剩余流量：' in subscription and '📅 到期：' in subscription
                 assert '2001:db8::10' in subscription
                 positions = [subscription.index(name) for name in ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']]
                 assert positions == sorted(positions), 'Unexpected subscription node order'
                 assert 'kjxv' not in subscription.lower()
                 assert 'reality-opts:' in subscription and 'MATCH,PROXY' in subscription
+            raw_request = urllib.request.Request(
+                f'http://127.0.0.1:{subscription_port}{raw_path}{result["subscriptionId"]}',
+                headers={'User-Agent': 'v2rayN/7.0.0'})
+            with opener.open(raw_request, timeout=10) as response:
+                raw_links = base64.b64decode(response.read()).decode().splitlines()
+                assert len(raw_links) == 5 and raw_links[0].startswith('socks://')
+                raw_names = [urllib.parse.unquote(urllib.parse.urlsplit(link).fragment).strip() for link in raw_links]
+                assert '📊 剩余流量：' in raw_names[0] and '📅 到期：' in raw_names[0]
+                assert raw_names[1:] == ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']
             before = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY tag').fetchall()
             saved_template = database.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'").fetchone()[0]
             subprocess.run(command, cwd=root, env=env, check=True, stdout=subprocess.DEVNULL)
