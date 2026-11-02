@@ -137,7 +137,7 @@ def canonical(snapshot):
         for client in settings["clients"]:
             client.pop("updated_at",None)
         nodes.append([tag,settings,json.loads(stream)])
-    return {"nodes":nodes,"settings":[[key,json.loads(value)] for key,value in snapshot["settings"]]}
+    return {"nodes":nodes,"settings":[[key,value if key == "remarkTemplate" else json.loads(value)] for key,value in snapshot["settings"]]}
 assert canonical(snapshot) == canonical(before), "Reinstall changed persistent connection settings"
 PY
 echo "PASS: full installer, failed-first-install retry, random admin credentials, two-node Clash subscription, repeat install preserves residential credentials and subscription settings."
