@@ -1,8 +1,11 @@
 package sub
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +29,57 @@ func setupInfoNodeTestDB(t *testing.T) {
 		&model.Setting{},
 	); err != nil {
 		t.Fatalf("AutoMigrate: %v", err)
+	}
+}
+
+func TestInfoNodeRemark_TrimsDisplayWhitespace(t *testing.T) {
+	svc := NewSubService("{{INBOUND}} | 📊 剩余流量：{{TRAFFIC_LEFT}} | {{EXPIRE_DATE}}")
+	svc.subInfoNodeEnable = true
+	svc.subscriptionBody = true
+	mode, remark := svc.resolveInfoNodeRemark("sub", nil, xray.ClientTraffic{Total: 10 * 1024 * 1024 * 1024}, true)
+	if mode != infoNodeActive || remark != "📊 剩余流量：10.00GB" {
+		t.Fatalf("expected a consistent name across raw, JSON and Clash subscriptions; got %d, %q", mode, remark)
+	}
+}
+
+func TestSubService_InfoNode_VmessMultipleEndpoints(t *testing.T) {
+	seedSubDB(t)
+	ib := seedSubInbound(t, "vmess-info", "vmess", 4431, 1,
+		`{"network":"tcp","security":"none","externalProxy":[{"dest":"one.example.com","port":443,"forceTls":"same"},{"dest":"two.example.com","port":8443,"forceTls":"same"}]}`)
+	if err := database.GetDB().Model(ib).Update("protocol", "vmess").Error; err != nil {
+		t.Fatal(err)
+	}
+	svc := NewSubService("info")
+	svc.subInfoNodeEnable = true
+	svc.subscriptionBody = true
+	links, _, _, _, err := svc.GetSubs("vmess-info", "sub.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	flat := strings.Split(strings.Join(links, "\n"), "\n")
+	if len(flat) != 3 {
+		t.Fatalf("want one info connection and two original endpoints: %v", links)
+	}
+	decode := func(link string) map[string]any {
+		t.Helper()
+		raw, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(link, "vmess://"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var result map[string]any
+		if err := json.Unmarshal(raw, &result); err != nil {
+			t.Fatal(err)
+		}
+		return result
+	}
+	info, original := decode(flat[0]), decode(flat[1])
+	if info["ps"] != "info" || info["add"] != "one.example.com" || decode(flat[2])["add"] != "two.example.com" {
+		t.Fatalf("wrong info name or endpoints: %v", links)
+	}
+	delete(info, "ps")
+	delete(original, "ps")
+	if !reflect.DeepEqual(info, original) {
+		t.Fatal("info connection changed original VMess credentials/options")
 	}
 }
 

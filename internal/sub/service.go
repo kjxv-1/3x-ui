@@ -453,8 +453,8 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 		if tmpl == "" {
 			tmpl = service.DefaultRemarkTemplate
 		}
-		remark := expandRemarkVars(tmpl, ctx)
-		if strings.TrimSpace(remark) != "" {
+		remark := strings.TrimSpace(expandRemarkVars(tmpl, ctx))
+		if remark != "" {
 			return infoNodeActive, remark
 		}
 	}
@@ -546,7 +546,8 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 		}
 		// Reuse the first exported connection so the info entry works in every
 		// client without depending on a local SOCKS listener (or looping into it).
-		infoLink := applyRemarkToLink(result[0], remark)
+		firstLink, _, _ := strings.Cut(strings.TrimSpace(result[0]), "\n")
+		infoLink := applyRemarkToLink(firstLink, remark)
 		result = append([]string{infoLink}, result...)
 	}
 

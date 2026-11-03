@@ -255,7 +255,7 @@ def main():
             assert len(json_documents) == 5
             info_document = dict(json_documents[0])
             original_document = dict(json_documents[1])
-            assert info_document.pop('remarks') == raw_names[0]
+            assert info_document.pop('remarks') == raw_names[0], f'Inconsistent JSON/raw info names: {json_documents[0]["remarks"]!r} / {raw_names[0]!r}'
             original_document.pop('remarks')
             assert info_document == original_document, 'Info JSON did not preserve the working connection'
             # Run the exported info document itself through the pinned Xray core.
