@@ -17,19 +17,40 @@ cat > /tmp/acme-fixture.sh <<'ACME'
 set -euo pipefail
 key=''
 cert=''
+domains=()
+issuing=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --issue) issuing=1; shift ;;
+        -d) domains+=("$2"); shift 2 ;;
         --key-file) key="$2"; shift 2 ;;
         --fullchain-file) cert="$2"; shift 2 ;;
         *) shift ;;
     esac
 done
+if [[ "$issuing" == 1 ]]; then
+    printf '%s\n' "${domains[@]}" > /tmp/acme-requested-ips
+fi
 if [[ -n "$key" && -n "$cert" ]]; then
+    san='IP:127.0.0.1'
+    if [[ "$XUI_TLS_SCENARIO" == dual ]]; then
+        grep -Fxq '2606:4700::8' /tmp/acme-requested-ips
+        san="$san,IP:2606:4700::8"
+    else
+        test "$(cat /tmp/acme-requested-ips)" = 127.0.0.1
+    fi
     openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes \
         -keyout "$key" -out "$cert" -subj /CN=127.0.0.1 \
-        -addext subjectAltName=IP:127.0.0.1 > /dev/null 2>&1
+        -addext "subjectAltName=$san" > /dev/null 2>&1
 fi
 ACME
+cat > /usr/local/bin/ip <<'IP'
+#!/usr/bin/env bash
+if [[ "$*" == '-o -6 addr show up scope global' && "$XUI_TLS_SCENARIO" == dual ]]; then
+    printf '%s\n' '2: eth0 inet6 fe80::1/64 scope link' '2: eth0 inet6 fd00::1/64 scope global' '2: eth0 inet6 2606:4700::8/64 scope global'
+fi
+IP
+chmod +x /usr/local/bin/ip
 cat > /usr/local/bin/curl <<'CURL'
 #!/usr/bin/env bash
 args=("$@")
@@ -117,7 +138,7 @@ for _ in $(seq 1 30); do
 done
 case "$code" in 200|301|302|307|308) : ;; *) tail -n 30 /tmp/tls-panel.log; exit 1 ;; esac
 python3 - <<'PY'
-import json,sqlite3,ssl,urllib.request
+import json,os,socket,sqlite3,ssl,urllib.request
 c=sqlite3.connect('/etc/x-ui/x-ui.db')
 result=json.load(open('/etc/x-ui/preset-result.json'))
 assert c.execute('SELECT count(*) FROM inbounds WHERE enable=1').fetchone()[0] == 2 + int(result['ipv6Enabled']) + int(result['hy2Enabled'])
@@ -145,5 +166,17 @@ with urllib.request.urlopen('https://127.0.0.1:2096'+settings['subClashPath']+re
     assert text.count('type: vless') == 2 + int(result['ipv6Enabled'])
     assert text.count('type: hysteria2') == 1
     assert 'IPv4-直连' in text and '住宅-待配置' in text
+if os.environ['XUI_TLS_SCENARIO'] == 'dual':
+    # Real IPv6 connection, with hostname verification of the public IP SAN.
+    # This isolated fixture never assigns or contacts the public test address.
+    with socket.create_connection(('::1',2096),timeout=10) as connection:
+        with context.wrap_socket(connection,server_hostname='2606:4700::8') as peer:
+            path=settings['subClashPath']+result['subscriptionId']
+            peer.sendall(f'GET {path} HTTP/1.1\r\nHost: [2606:4700::8]:2096\r\nConnection: close\r\n\r\n'.encode())
+            chunks=[]
+            while chunk:=peer.recv(65536):
+                chunks.append(chunk)
+            response=b''.join(chunks)
+            assert response.startswith(b'HTTP/1.1 200') and b'type: vless' in response
 PY
-echo 'PASS: fresh IP-certificate installer restores bundle directory, creates two nodes, installs service, and serves HTTPS panel and Clash subscription'
+echo "PASS: $XUI_TLS_SCENARIO IP-certificate installer, verified IP SANs, HTTPS panel and Clash subscription"

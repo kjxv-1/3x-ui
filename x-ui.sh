@@ -50,10 +50,89 @@ is_domain() {
     [[ "$1" =~ ^([A-Za-z0-9](-*[A-Za-z0-9])*\.)+(xn--[a-z0-9]{2,}|[A-Za-z]{2,})$ ]] && return 0 || return 1
 }
 
-# acme.sh's standalone server binds IPv4 by default; --listen-v6 makes it
-# v6-only, which breaks HTTP-01 validation when the domain's A record points
-# at this host's IPv4 (#4994). Only force IPv6 when the host has no global
-# IPv4 address at all.
+# BEGIN shared IP certificate helpers (keep install.sh and x-ui.sh identical).
+# Select an address actually assigned to an active interface. Do not request
+# certificates for link-local/ULA, documentation, temporary or unready addresses.
+ip_certificate_ipv6() {
+    local requested="${XUI_SSL_IPV6:-auto}" selector="" candidates=""
+    case "$requested" in
+        none | off | 0) return 0 ;;
+        auto) selector="${XUI_PRESET_IPV6_ADDRESS:-}" ;;
+        *) selector="$requested" ;;
+    esac
+    if [[ -n "$selector" && ! "$selector" =~ ^[23][[:xdigit:]:]+$ ]]; then
+        echo "Invalid public IPv6 certificate address: $selector" >&2
+        return 1
+    fi
+    if ! command -v ip > /dev/null 2>&1; then
+        if [[ -n "$selector" ]]; then
+            echo 'Cannot verify the requested IPv6 address: ip command not found.' >&2
+            return 1
+        fi
+        echo 'No ip command available; requesting the IPv4 certificate only.' >&2
+        return 0
+    fi
+    local options=(-o -6 addr show up scope global)
+    [[ -z "$selector" ]] || options+=(to "$selector/128")
+    candidates=$(ip "${options[@]}" 2>/dev/null | awk '
+        $3 == "inet6" && $0 !~ /tentative|dadfailed|deprecated|temporary/ {
+            split(tolower($4), address, "/")
+            if (address[1] ~ /^[23][0-9a-f:]+$/ && address[1] !~ /^2001:db8:/) print address[1]
+        }')
+    if [[ -n "$selector" && -z "$candidates" ]]; then
+        echo "IPv6 certificate address is not assigned and ready on an active interface: $selector" >&2
+        return 1
+    fi
+    [[ -z "$candidates" ]] || printf '%s\n' "${candidates%%$'\n'*}"
+    return 0
+}
+
+# Preserve installed files if ACME installation fails or returns a certificate
+# with missing IP SANs, an expired certificate or a mismatched private key.
+install_ip_certificate_files() {
+    local ipv4="$1" ipv6="$2" cert_dir="$3" reload_cmd="$4" backup="" valid=0
+    mkdir -p "$cert_dir" || return 1
+    backup=$(mktemp -d "$cert_dir/.previous.XXXXXX") || return 1
+    local name
+    for name in fullchain.pem privkey.pem; do
+        if [[ -e "$cert_dir/$name" ]]; then
+            cp -p "$cert_dir/$name" "$backup/$name" || return 1
+        fi
+    done
+    # A failed reload on first installation is harmless only if the files are valid.
+    ~/.acme.sh/acme.sh --installcert --force -d "$ipv4" \
+        --key-file "$cert_dir/privkey.pem" --fullchain-file "$cert_dir/fullchain.pem" \
+        --reloadcmd "$reload_cmd" || true
+    if openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkend 0 > /dev/null 2>&1 \
+        && openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkip "$ipv4" > /dev/null 2>&1 \
+        && { [[ -z "$ipv6" ]] || openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkip "$ipv6" > /dev/null 2>&1; } \
+        && openssl x509 -in "$cert_dir/fullchain.pem" -pubkey -noout > "$backup/cert.pub" 2>/dev/null \
+        && openssl pkey -in "$cert_dir/privkey.pem" -pubout > "$backup/key.pub" 2>/dev/null \
+        && cmp -s "$backup/cert.pub" "$backup/key.pub"; then
+        valid=1
+    else
+        echo 'Certificate installation failed validation; restoring previous certificate files.' >&2
+        for name in fullchain.pem privkey.pem; do
+            if [[ -e "$backup/$name" ]]; then
+                cp -p "$backup/$name" "$cert_dir/$name" || return 1
+            else
+                rm -f -- "$cert_dir/$name"
+            fi
+        done
+        if [[ -f "$backup/fullchain.pem" && -f "$backup/privkey.pem" ]]; then
+            bash -c "$reload_cmd" > /dev/null 2>&1 || true
+        fi
+    fi
+    rm -f -- "$backup/fullchain.pem" "$backup/privkey.pem" "$backup/cert.pub" "$backup/key.pub"
+    rmdir -- "$backup"
+    [[ "$valid" == 1 ]]
+}
+# END shared IP certificate helpers.
+
+
+# Do not force a domain's HTTP-01 listener to IPv6-only while it also uses
+# this host's IPv4 (#4994). Current acme.sh defaults to dual-stack listening;
+# force IPv6 only on hosts without a global IPv4 address.
 acme_listen_flag() {
     if ip -4 addr show scope global 2> /dev/null | grep -q "inet "; then
         echo ""
@@ -1578,10 +1657,13 @@ ssl_cert_issue_for_ip() {
 
     LOGI "Issuing certificate for server IP: ${server_ip}"
 
-    # Ask for optional IPv6
     local ipv6_addr=""
-    read -rp "Do you have an IPv6 address to include? (leave empty to skip): " ipv6_addr
-    ipv6_addr="${ipv6_addr// /}" # Trim whitespace
+    ipv6_addr=$(ip_certificate_ipv6) || return 1
+    if [[ -n "$ipv6_addr" ]]; then
+        LOGI "Automatically including IPv6 in the IP certificate: $ipv6_addr"
+    else
+        LOGI 'No IPv6 selected; requesting the IPv4 certificate only.'
+    fi
 
     # check for acme.sh first
     if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
@@ -1626,12 +1708,8 @@ ssl_cert_issue_for_ip() {
     certPath="/root/cert/ip"
     mkdir -p "$certPath"
 
-    # Build domain arguments
-    local domain_args="-d ${server_ip}"
-    if [[ -n "$ipv6_addr" ]] && is_ipv6 "$ipv6_addr"; then
-        domain_args="${domain_args} -d ${ipv6_addr}"
-        LOGI "Including IPv6 address: ${ipv6_addr}"
-    fi
+    local domain_args=(-d "$server_ip")
+    [[ -z "$ipv6_addr" ]] || domain_args+=(-d "$ipv6_addr")
 
     # Choose port for HTTP-01 listener (default 80, allow override)
     local WebPort=""
@@ -1672,46 +1750,21 @@ ssl_cert_issue_for_ip() {
     # Reload command - restarts panel after renewal
     local reloadCmd="systemctl restart x-ui 2>/dev/null || rc-service x-ui restart 2>/dev/null"
 
-    # issue the certificate for IP with shortlived profile
-    ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt --force
-    ~/.acme.sh/acme.sh --issue \
-        ${domain_args} \
-        --standalone \
-        --server letsencrypt \
-        --certificate-profile shortlived \
-        --days 6 \
-        --httpport ${WebPort} \
-        --force
-
-    if [ $? -ne 0 ]; then
-        LOGE "Failed to issue certificate for IP: ${server_ip}"
-        LOGE "Make sure port ${WebPort} is open and the server is accessible from the internet"
-        # Cleanup acme.sh data for both IPv4 and IPv6 if specified
-        rm -rf ~/.acme.sh/${server_ip} ~/.acme.sh/${server_ip}_ecc 2> /dev/null
-        [[ -n "$ipv6_addr" ]] && rm -rf ~/.acme.sh/${ipv6_addr} ~/.acme.sh/${ipv6_addr}_ecc 2> /dev/null
-        rm -rf ${certPath} 2> /dev/null
+    # Upgrade before issuance so existing ACME installations get dual-stack HTTP-01.
+    ~/.acme.sh/acme.sh --upgrade --auto-upgrade > /dev/null 2>&1 || {
+        echo 'Could not update acme.sh; existing certificates have been preserved.' >&2
         return 1
-    else
-        LOGI "Certificate issued successfully for IP: ${server_ip}"
-    fi
-
-    # Install the certificate
-    # Note: acme.sh may report "Reload error" and exit non-zero if reloadcmd fails,
-    # but the cert files are still installed. We check for files instead of exit code.
-    ~/.acme.sh/acme.sh --installcert --force -d ${server_ip} \
-        --key-file "${certPath}/privkey.pem" \
-        --fullchain-file "${certPath}/fullchain.pem" \
-        --reloadcmd "${reloadCmd}" 2>&1 || true
-
-    # Verify certificate files exist (don't rely on exit code - reloadcmd failure causes non-zero)
-    if [[ ! -f "${certPath}/fullchain.pem" || ! -f "${certPath}/privkey.pem" ]]; then
-        LOGE "Certificate files not found after installation"
-        # Cleanup acme.sh data for both IPv4 and IPv6 if specified
-        rm -rf ~/.acme.sh/${server_ip} ~/.acme.sh/${server_ip}_ecc 2> /dev/null
-        [[ -n "$ipv6_addr" ]] && rm -rf ~/.acme.sh/${ipv6_addr} ~/.acme.sh/${ipv6_addr}_ecc 2> /dev/null
-        rm -rf ${certPath} 2> /dev/null
+    }
+    LOGI "Issuing IP certificate for $server_ip${ipv6_addr:+ and $ipv6_addr}..."
+    ~/.acme.sh/acme.sh --set-default-ca --server letsencrypt --force > /dev/null 2>&1
+    [[ -z "${XUI_ACME_EMAIL:-}" ]] || ~/.acme.sh/acme.sh --register-account -m "$XUI_ACME_EMAIL" > /dev/null 2>&1
+    if ! ~/.acme.sh/acme.sh --issue "${domain_args[@]}" --standalone --server letsencrypt \
+        --certificate-profile shortlived --days 3 --httpport "$WebPort" --force; then
+        echo 'IP certificate issuance failed. Check public TCP port 80 for every requested address, including IPv6.' >&2
+        echo 'Existing certificate files have been preserved; IPv6 was not silently omitted.' >&2
         return 1
     fi
+    install_ip_certificate_files "$server_ip" "$ipv6_addr" "$certPath" "$reloadCmd" || return 1
 
     LOGI "Certificate files installed successfully"
 
