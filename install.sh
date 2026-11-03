@@ -117,9 +117,10 @@ install_ip_certificate_files() {
     ~/.acme.sh/acme.sh --installcert --force -d "$ipv4" \
         --key-file "$cert_dir/privkey.pem" --fullchain-file "$cert_dir/fullchain.pem" \
         --reloadcmd "$reload_cmd" || true
-    if openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkend 0 > /dev/null 2>&1 \
-        && openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkip "$ipv4" > /dev/null 2>&1 \
-        && { [[ -z "$ipv6" ]] || openssl x509 -in "$cert_dir/fullchain.pem" -noout -checkip "$ipv6" > /dev/null 2>&1; } \
+    # Some OpenSSL versions return success for x509 -checkip mismatches.
+    # verify -verify_ip reliably checks IP SANs and the validity period.
+    if openssl verify -trusted "$cert_dir/fullchain.pem" -partial_chain -verify_ip "$ipv4" "$cert_dir/fullchain.pem" > /dev/null 2>&1 \
+        && { [[ -z "$ipv6" ]] || openssl verify -trusted "$cert_dir/fullchain.pem" -partial_chain -verify_ip "$ipv6" "$cert_dir/fullchain.pem" > /dev/null 2>&1; } \
         && openssl x509 -in "$cert_dir/fullchain.pem" -pubkey -noout > "$backup/cert.pub" 2>/dev/null \
         && openssl pkey -in "$cert_dir/privkey.pem" -pubout > "$backup/key.pub" 2>/dev/null \
         && cmp -s "$backup/cert.pub" "$backup/key.pub"; then

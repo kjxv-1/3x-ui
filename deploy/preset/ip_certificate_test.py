@@ -106,7 +106,7 @@ exit 1
                 before = {p.name: p.read_bytes() for p in dest.iterdir()}
                 result = self.run_shell(logic + '\ninstall_ip_certificate_files 192.0.2.10 "$IPV6" "$DEST" true',
                                         FIXTURE=(root / fixture).as_posix(), IPV6=requested_v6, DEST=dest.as_posix())
-                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertEqual(result.returncode, expected, f"{fixture}: {result.stderr}")
                 if expected:
                     self.assertEqual({p.name: p.read_bytes() for p in dest.iterdir()}, before)
                 else:
