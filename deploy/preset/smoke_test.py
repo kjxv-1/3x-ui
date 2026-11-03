@@ -96,6 +96,18 @@ class TCPServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
 
 
+class TLSServer(http.server.ThreadingHTTPServer):
+    # REALITY may open its target connection before receiving a ClientHello.
+    # Handshaking on the listening socket would block every later connection.
+    def finish_request(self, request, client_address):
+        request.settimeout(8)
+        # REALITY intentionally abandons probe connections after reading the
+        # target's ServerHello; these are not failures of the HTTP fixture.
+        with contextlib.suppress(ssl.SSLError, TimeoutError, ConnectionResetError):
+            with self.tls.wrap_socket(request, server_side=True) as stream:
+                super().finish_request(stream, client_address)
+
+
 def start_server(server):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server
@@ -138,7 +150,7 @@ def main():
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     with tempfile.TemporaryDirectory(prefix='preset-smoke-') as temporary:
         work = pathlib.Path(temporary)
-        env = dict(os.environ, XUI_DB_FOLDER=str(work), XUI_BIN_FOLDER=str(root / 'bin'),
+        env = dict(os.environ, XUI_DB_FOLDER=str(work), XUI_LOG_FOLDER=str(work / 'logs'), XUI_BIN_FOLDER=str(root / 'bin'),
                    XRAY_LOCATION_ASSET=str(root / 'bin'), XUI_ENABLE_FAIL2BAN='false', XUI_LOG_LEVEL='error')
         binary = str(root / ('x-ui.exe' if os.name == 'nt' else 'x-ui'))
         direct_port, residential_port, panel_port, subscription_port = port(), port(), port(), port()
@@ -187,12 +199,12 @@ def main():
         socks = start_server(TCPServer(('127.0.0.1', 0), Socks))
         servers.append(socks)
         # A local TLS 1.3 / h2 target makes REALITY handshake tests deterministic.
-        target = http.server.ThreadingHTTPServer(('127.0.0.1', 0), HTTP)
+        target = TLSServer(('127.0.0.1', 0), HTTP)
         tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         tls.minimum_version = ssl.TLSVersion.TLSv1_3
         tls.set_alpn_protocols(['h2'])
         tls.load_cert_chain(work / 'cert.pem', work / 'key.pem')
-        target.socket = tls.wrap_socket(target.socket, server_side=True)
+        target.tls = tls
         servers.append(start_server(target))
         for tag, _, stream_json in inbounds:
             if tag == '默认HY2直连':
@@ -201,6 +213,7 @@ def main():
             stream['realitySettings']['target'] = f'127.0.0.1:{target.server_address[1]}'
             database.execute('UPDATE inbounds SET stream_settings=? WHERE tag=?', (json.dumps(stream), tag))
         config = json.loads(database.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'").fetchone()[0])
+        config['log'] = {'loglevel': 'debug', 'error': str(work / 'server-core.log'), 'access': 'none'}
         assert 'kjxv' not in json.dumps(config).lower()
         assert any(ob['tag'] == '默认' and ob['protocol'] == 'socks' for ob in config['outbounds'])
         assert config['routing']['rules'][-1]['inboundTag'] == ['默认住宅']
@@ -369,6 +382,9 @@ def main():
                 proxy = info_document.get('outbounds', [{}])[0]
                 print('Info connection diagnostic:', json.dumps({key: proxy.get(key) for key in ('protocol', 'streamSettings', 'mux')}, ensure_ascii=False))
             print((work / 'runtime.log').read_text(errors='replace')[-6000:])
+            server_log = work / 'server-core.log'
+            if server_log.exists():
+                print('Fixture server core:', server_log.read_text(errors='replace')[-6000:])
             raise
         finally:
             for process in reversed(processes):
