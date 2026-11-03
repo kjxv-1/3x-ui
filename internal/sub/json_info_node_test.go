@@ -1,6 +1,7 @@
 package sub
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"reflect"
@@ -203,11 +204,11 @@ func TestSubJson_InfoNode_Depleted(t *testing.T) {
 
 func assertInfoNodeStatusOnlyJSON(t *testing.T, out string) {
 	t.Helper()
-	docs := parseSubJsonDocs(t, out)
-	if len(docs) != 1 {
-		t.Fatalf("inactive subscription must only contain a status document: %s", out)
+	var doc map[string]any
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("inactive subscription must only contain a status document: %v", err)
 	}
-	outbounds, _ := docs[0]["outbounds"].([]any)
+	outbounds, _ := doc["outbounds"].([]any)
 	if len(outbounds) == 0 {
 		t.Fatal("missing status outbound")
 	}
