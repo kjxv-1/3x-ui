@@ -1576,7 +1576,7 @@
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "個別情報設定 / ダミーノード",
-      "subInfoNodeEnableDesc": "有効にすると、備考と残りの通信量/日数が上部の独立したSOCKSダミー構成として表示され、期限切れや通信量超過時はステータスのみが返されます。",
+      "subInfoNodeEnableDesc": "先頭の購読ノードの接続を使用する通信量・有効期限の情報ノードを上部に表示し、通常の接続と遅延テストを利用できます。有効期限切れまたは通信量超過時は状態表示のみを返します。",
       "subExpiredTemplate": "期限切れテンプレート",
       "subExpiredTemplateDesc": "サブスクリプションの有効期限が切れた際のダミー構成用テンプレート。",
       "subTrafficDepletedTemplate": "通信量超過テンプレート",

@@ -230,11 +230,21 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 	header = subReq.subscriptionUserinfo(traffic)
 
 	if mode, remark := subReq.resolveInfoNodeRemark(subId, emails, traffic, len(configArray) > 0); mode != infoNodeNone {
-		dummyConfig := s.genDummySocksConfig(remark)
 		if mode == infoNodeExpired || mode == infoNodeDepleted {
-			configArray = []json_util.RawMessage{dummyConfig}
+			configArray = []json_util.RawMessage{s.genDummySocksConfig(remark)}
 		} else {
-			configArray = append([]json_util.RawMessage{dummyConfig}, configArray...)
+			// Copy the entire working document, including DNS and routing, and
+			// replace only its display name. Never share a loopback SOCKS outbound.
+			var infoConfig map[string]json.RawMessage
+			if err := json.Unmarshal(configArray[0], &infoConfig); err != nil {
+				return "", header, err
+			}
+			infoConfig["remarks"], _ = json.Marshal(remark)
+			infoJSON, err := json.Marshal(infoConfig)
+			if err != nil {
+				return "", header, err
+			}
+			configArray = append([]json_util.RawMessage{infoJSON}, configArray...)
 		}
 	}
 

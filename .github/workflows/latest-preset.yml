@@ -44,13 +44,13 @@ jobs:
         echo "XRAY_LOCATION_ASSET=$GITHUB_WORKSPACE/x-ui/bin" >> "$GITHUB_ENV"
     - name: Check formatting and installer syntax
       run: |
-        test -z "$(gofmt -l main.go internal/config/config.go internal/web/service/tutorial_preset*.go internal/web/service/panel/preset_test.go internal/web/service/panel/panel.go)"
+        test -z "$(gofmt -l main.go internal/config/config.go internal/sub internal/web/service/tutorial_preset*.go internal/web/service/panel/preset_test.go internal/web/service/panel/panel.go)"
         for script in install.sh x-ui.sh update.sh deploy/preset/*.sh; do bash -n "$script" || exit; done
         python3 -m unittest discover -s deploy/preset -p '*_test.py'
     - name: Test transactional initialization, routes, subscriptions and update guard
       run: |-
         go test ./internal/web/service -run 'TutorialPreset|InboundTag|GetXrayConfig' -count=1
-        go test ./internal/sub -run 'Clash|Sub.*Sort' -count=1
+        go test ./internal/sub -run 'Clash|Sub.*Sort|InfoNode|SubJsonDns' -count=1
         go test ./internal/web/service/panel -count=1
     - name: Verify unchanged maintenance version
       run: test "$PRESET_RELEASE_TAG" = "v$(cat internal/config/version)"
@@ -124,9 +124,16 @@ jobs:
         ldd xui-release || echo "Static binary confirmed"
     - name: Reuse frozen 3.10.2 assets and pin Xray 26.6.27
       run: python3 deploy/preset/package.py --platform linux-${{ matrix.platform }} --binary xui-release
-    - name: Smoke test actual Xray and subscription
+    - name: Download verified Mihomo for subscription health checks
       if: matrix.platform == 'amd64'
-      run: python3 deploy/preset/smoke_test.py --directory x-ui
+      run: |
+        curl -fLsS --retry 5 --retry-all-errors -o mihomo-test.gz https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-compatible-v1.19.33.gz
+        echo '386508bfb1c72c43b6a0eda73708ecdce82546581b0ebcb16366c53757c622b6  mihomo-test.gz' | sha256sum -c -
+        gzip -d mihomo-test.gz
+        chmod +x mihomo-test
+    - name: Smoke test actual Xray and Mihomo info-node latency
+      if: matrix.platform == 'amd64'
+      run: python3 deploy/preset/smoke_test.py --directory x-ui --mihomo ./mihomo-test
     - name: Upload files to Artifacts
       uses: actions/upload-artifact@v7
       with:

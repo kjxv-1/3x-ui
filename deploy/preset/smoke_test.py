@@ -126,6 +126,7 @@ def http_through_socks(proxy_port, destination_port):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--directory', required=True)
+    parser.add_argument('--mihomo', help='Optional Mihomo binary for actual Clash health-check validation')
     args = parser.parse_args()
     root = pathlib.Path(args.directory).resolve()
     processes = []
@@ -148,6 +149,7 @@ def main():
         result = json.loads(database.execute("SELECT value FROM settings WHERE key='tutorialPresetV1'").fetchone()[0])
         clash_path = database.execute("SELECT value FROM settings WHERE key='subClashPath'").fetchone()[0]
         raw_path = database.execute("SELECT value FROM settings WHERE key='subPath'").fetchone()[0]
+        json_path = database.execute("SELECT value FROM settings WHERE key='subJsonPath'").fetchone()[0]
         inbounds = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY sub_sort_index').fetchall()
         assert [row[0] for row in inbounds] == ['默认直连', '默认IPv6直连', '默认HY2直连', '默认住宅']
         assert 'kjxv' not in json.dumps(inbounds).lower()
@@ -206,7 +208,7 @@ def main():
             if outbound['tag'] == '默认':
                 outbound['settings'] = {'address': '127.0.0.1', 'port': socks.server_address[1], 'user': 'fixture-user', 'pass': 'fixture-password'}
         values = {'xrayTemplateConfig': json.dumps(config), 'webPort': str(panel_port), 'webListen': '127.0.0.1',
-                  'webBasePath': '/', 'webCertFile': '', 'webKeyFile': '', 'subCertFile': '', 'subKeyFile': '', 'subPort': str(subscription_port), 'subListen': '127.0.0.1'}
+                  'webBasePath': '/', 'webCertFile': '', 'webKeyFile': '', 'subCertFile': '', 'subKeyFile': '', 'subPort': str(subscription_port), 'subListen': '127.0.0.1', 'subJsonEnable': 'true'}
         for key, value in values.items():
             if database.execute('UPDATE settings SET value=? WHERE key=?', (value, key)).rowcount == 0:
                 database.execute('INSERT INTO settings(key,value) VALUES (?,?)', (key, value))
@@ -229,9 +231,9 @@ def main():
                 raise RuntimeError('Panel did not become ready')
             with opener.open(f'http://127.0.0.1:{subscription_port}{clash_path}{result["subscriptionId"]}', timeout=10) as response:
                 subscription = response.read().decode()
-                assert subscription.count('type: vless') == 3
+                assert subscription.count('type: vless') == 4
                 assert subscription.count('type: hysteria2') == 1
-                assert subscription.count('type: socks5') == 1
+                assert 'type: socks5' not in subscription
                 assert '📊 剩余流量：7.00GB' in subscription and f'📅 到期：{expiry_date}' in subscription
                 assert '2001:db8::10' in subscription
                 positions = [subscription.index(name) for name in ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']]
@@ -243,10 +245,56 @@ def main():
                 headers={'User-Agent': 'v2rayN/7.0.0'})
             with opener.open(raw_request, timeout=10) as response:
                 raw_links = base64.b64decode(response.read()).decode().splitlines()
-                assert len(raw_links) == 5 and raw_links[0].startswith('socks://')
+                assert len(raw_links) == 5 and raw_links[0].startswith('vless://')
+                assert raw_links[0].split('#', 1)[0] == raw_links[1].split('#', 1)[0], 'Info entry changed real connection parameters'
                 raw_names = [urllib.parse.unquote(urllib.parse.urlsplit(link).fragment).strip() for link in raw_links]
                 assert '📊 剩余流量：7.00GB' in raw_names[0] and f'📅 到期：{expiry_date}' in raw_names[0]
                 assert raw_names[1:] == ['IPv4-直连', 'IPv6-直连', 'Hy2-直连', '住宅-待配置']
+            with opener.open(f'http://127.0.0.1:{subscription_port}{json_path}{result["subscriptionId"]}', timeout=10) as response:
+                json_documents = json.load(response)
+            assert len(json_documents) == 5
+            info_document = dict(json_documents[0])
+            original_document = dict(json_documents[1])
+            assert info_document.pop('remarks') == raw_names[0]
+            original_document.pop('remarks')
+            assert info_document == original_document, 'Info JSON did not preserve the working connection'
+            # Run the exported info document itself through the pinned Xray core.
+            info_port = port()
+            info_document['inbounds'] = [{'listen': '127.0.0.1', 'port': info_port, 'protocol': 'socks', 'settings': {'udp': False}}]
+            info_path = work / 'info-client.json'
+            info_path.write_text(json.dumps(info_document))
+            subprocess.run([core, 'run', '-test', '-c', str(info_path)], env=env, check=True, stdout=subprocess.DEVNULL)
+            processes.append(subprocess.Popen([core, 'run', '-c', str(info_path)], env=env, stdout=log, stderr=log))
+            time.sleep(.5)
+            assert b'preset-route-ok' in http_through_socks(info_port, http_fixture.server_address[1])
+            if args.mihomo:
+                mihomo = str(pathlib.Path(args.mihomo).resolve())
+                mixed_port, controller_port = port(), port()
+                clash_config = work / 'info-clash.yaml'
+                clash_config.write_text(subscription + f'\nmixed-port: {mixed_port}\nexternal-controller: 127.0.0.1:{controller_port}\n', encoding='utf-8')
+                processes.append(subprocess.Popen([mihomo, '-d', str(work / 'mihomo-data'), '-f', str(clash_config)], stdout=log, stderr=log))
+                controller = f'http://127.0.0.1:{controller_port}'
+                for _ in range(80):
+                    try:
+                        with opener.open(controller + '/version', timeout=1) as response:
+                            assert json.load(response)['version']
+                        break
+                    except (OSError, AssertionError):
+                        time.sleep(.25)
+                else:
+                    raise RuntimeError('Mihomo did not become ready')
+                delay_query = urllib.parse.urlencode({'timeout': 5000, 'url': f'http://127.0.0.1:{http_fixture.server_address[1]}/'})
+                for name in raw_names[:2]:
+                    name_path = urllib.parse.quote(name, safe='')
+                    with opener.open(f'{controller}/proxies/{name_path}/delay?{delay_query}', timeout=10) as response:
+                        delay = json.load(response)['delay']
+                    assert isinstance(delay, int) and delay >= 0, 'Expected measured Mihomo delay'
+                select_info = urllib.request.Request(controller + '/proxies/PROXY', data=json.dumps({'name': raw_names[0]}).encode(),
+                                                     headers={'Content-Type': 'application/json'}, method='PUT')
+                with opener.open(select_info, timeout=5) as response:
+                    assert response.status == 204
+                assert b'preset-route-ok' in http_through_socks(mixed_port, http_fixture.server_address[1])
+                print('PASS: Mihomo measured delay for info/original nodes and routed traffic through the selected info node.')
             before = database.execute('SELECT tag, settings, stream_settings FROM inbounds ORDER BY tag').fetchall()
             saved_template = database.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'").fetchone()[0]
             subprocess.run(command, cwd=root, env=env, check=True, stdout=subprocess.DEVNULL)
@@ -296,7 +344,7 @@ def main():
                 failed = True
             assert failed, 'Residential node silently fell back to direct'
             assert b'preset-route-ok' in http_through_socks(client_ports[0], http_fixture.server_address[1])
-            print('PASS: actual REALITY/VLESS connections, authenticated residential SOCKS, failure isolation, IPv6 REALITY and certificate-verified HY2, four-node Clash subscription, repeated initialization.')
+            print('PASS: actual REALITY/VLESS connections, authenticated residential SOCKS, failure isolation, IPv6 REALITY and certificate-verified HY2, working info subscriptions and Xray connection, repeated initialization.')
         except Exception:
             log.flush()
             print((work / 'runtime.log').read_text(errors='replace')[-6000:])

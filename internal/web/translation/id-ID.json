@@ -1576,7 +1576,7 @@
       "subCalendarExpireInclusive": "Month-end subscription expiry display",
       "subCalendarExpireInclusiveDesc": "Default off. For clients renewing on day 1 with a midnight cutoff in the panel timezone, report the previous month's last second in subscription expiry headers. Actual cutoff and renewals are unchanged. Clients use their own timezone and may consider the subscription expired one second early.",
       "subInfoNodeEnable": "Konfigurasi Info Terpisah / Node Dummy",
-      "subInfoNodeEnableDesc": "Saat diaktifkan, catatan dan sisa kuota/hari disajikan sebagai konfigurasi SOCKS dummy terpisah di bagian atas, dan langganan kedaluwarsa/habis hanya mengembalikan status.",
+      "subInfoNodeEnableDesc": "Tampilkan node informasi kuota/kedaluwarsa di bagian atas menggunakan koneksi node langganan pertama, dengan dukungan koneksi dan uji latensi. Langganan kedaluwarsa atau habis kuota hanya menampilkan status.",
       "subExpiredTemplate": "Templat Kedaluwarsa",
       "subExpiredTemplateDesc": "Templat untuk konfigurasi dummy saat akun langganan telah kedaluwarsa.",
       "subTrafficDepletedTemplate": "Templat Kuota Habis",

@@ -540,11 +540,14 @@ func (s *SubService) getSubs(subId string) ([]string, []string, int64, xray.Clie
 	traffic.Enable = hasEnabledClient
 
 	if mode, remark := s.resolveInfoNodeRemark(subId, uniqueEmails, traffic, len(result) > 0); mode != infoNodeNone {
-		dummyLink := fmt.Sprintf("socks://127.0.0.1:1080#%s", strings.ReplaceAll(url.QueryEscape(remark), "+", "%20"))
 		if mode == infoNodeExpired || mode == infoNodeDepleted {
+			dummyLink := fmt.Sprintf("socks://127.0.0.1:1080#%s", strings.ReplaceAll(url.QueryEscape(remark), "+", "%20"))
 			return []string{dummyLink}, emails, lastOnline, traffic, nil
 		}
-		result = append([]string{dummyLink}, result...)
+		// Reuse the first exported connection so the info entry works in every
+		// client without depending on a local SOCKS listener (or looping into it).
+		infoLink := applyRemarkToLink(result[0], remark)
+		result = append([]string{infoLink}, result...)
 	}
 
 	return result, emails, lastOnline, traffic, nil

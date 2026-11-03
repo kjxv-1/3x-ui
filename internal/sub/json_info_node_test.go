@@ -2,6 +2,8 @@ package sub
 
 import (
 	"fmt"
+	"maps"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -64,10 +66,17 @@ func TestSubJson_InfoNode_Active(t *testing.T) {
 	}
 
 	if !strings.Contains(out, "user1@test.com|📊8.00GB") {
-		t.Fatalf("expected dummy remark in JSON remarks, got:\n%s", out)
+		t.Fatalf("expected info remark in JSON remarks, got:\n%s", out)
 	}
-	if !strings.Contains(out, `"protocol": "socks"`) && !strings.Contains(out, `"protocol":"socks"`) {
-		t.Fatalf("expected socks outbound in JSON, got:\n%s", out)
+	docs := parseSubJsonDocs(t, out)
+	if len(docs) != 2 || docs[1]["remarks"] != "Germany-VLESS" {
+		t.Fatalf("expected info document + unchanged original, got:\n%s", out)
+	}
+	info, original := maps.Clone(docs[0]), maps.Clone(docs[1])
+	delete(info, "remarks")
+	delete(original, "remarks")
+	if !reflect.DeepEqual(info, original) {
+		t.Fatalf("info document must preserve credentials, routing, DNS and all other connection settings:\n%s", out)
 	}
 }
 
@@ -128,6 +137,7 @@ func TestSubJson_InfoNode_Expired(t *testing.T) {
 	if strings.Contains(out, "Germany-VLESS") {
 		t.Fatalf("expired subscription must NOT contain working inbound in JSON, got:\n%s", out)
 	}
+	assertInfoNodeStatusOnlyJSON(t, out)
 }
 
 func TestSubJson_InfoNode_Depleted(t *testing.T) {
@@ -187,6 +197,23 @@ func TestSubJson_InfoNode_Depleted(t *testing.T) {
 	}
 	if strings.Contains(out, "Germany-VLESS") {
 		t.Fatalf("depleted subscription must NOT contain working inbound in JSON, got:\n%s", out)
+	}
+	assertInfoNodeStatusOnlyJSON(t, out)
+}
+
+func assertInfoNodeStatusOnlyJSON(t *testing.T, out string) {
+	t.Helper()
+	docs := parseSubJsonDocs(t, out)
+	if len(docs) != 1 {
+		t.Fatalf("inactive subscription must only contain a status document: %s", out)
+	}
+	outbounds, _ := docs[0]["outbounds"].([]any)
+	if len(outbounds) == 0 {
+		t.Fatal("missing status outbound")
+	}
+	proxy, _ := outbounds[0].(map[string]any)
+	if proxy["protocol"] != "socks" {
+		t.Fatalf("inactive info node must not reuse a working connection: %s", out)
 	}
 }
 

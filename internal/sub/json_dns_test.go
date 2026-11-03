@@ -223,7 +223,7 @@ func TestSubJsonDns_AppliesWhenRoutingProfileUnusable(t *testing.T) {
 	}
 }
 
-// The dummy info node is emitted as a document too, so it carries the panel DNS.
+// The working info connection must preserve the original document's panel DNS.
 func TestSubJsonDns_AppliesToInfoNodeDocument(t *testing.T) {
 	setupInfoNodeTestDB(t)
 	db := database.GetDB()

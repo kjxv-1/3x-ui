@@ -83,7 +83,7 @@ func TestSubService_InfoNode_Active(t *testing.T) {
 		t.Fatalf("GetSubs error: %v", err)
 	}
 	if len(links) != 2 {
-		t.Fatalf("expected 2 links (dummy info node + 1 vless link), got %d: %v", len(links), links)
+		t.Fatalf("expected info connection + original vless link, got %d: %v", len(links), links)
 	}
 	if len(emails) != 1 || emails[0] != "user1@test.com" {
 		t.Fatalf("emails = %v, want [user1@test.com]", emails)
@@ -92,13 +92,20 @@ func TestSubService_InfoNode_Active(t *testing.T) {
 		t.Fatalf("traffic should be enabled")
 	}
 
-	// First link must be the dummy socks node
-	if !strings.HasPrefix(links[0], "socks://127.0.0.1:1080#") {
-		t.Fatalf("first link must be dummy socks node, got: %q", links[0])
+	// Only the display name may differ: credentials, address and TLS options
+	// must still describe the same usable connection as the original node.
+	infoBody, _, _ := strings.Cut(links[0], "#")
+	originalBody, _, _ := strings.Cut(links[1], "#")
+	if infoBody != originalBody || !strings.HasPrefix(infoBody, "vless://") {
+		t.Fatalf("info connection differs from the original: %v", links)
 	}
-	decodedRemark, _ := url.QueryUnescape(strings.TrimPrefix(links[0], "socks://127.0.0.1:1080#"))
+	infoURL, err := url.Parse(links[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	decodedRemark := infoURL.Fragment
 	if !strings.Contains(decodedRemark, "user1@test.com") || !strings.Contains(decodedRemark, "8.00GB") {
-		t.Fatalf("expected dummy remark to contain user1@test.com and 8.00GB, got: %q", decodedRemark)
+		t.Fatalf("expected info remark to contain user1@test.com and 8.00GB, got: %q", decodedRemark)
 	}
 
 	// Second link must be the clean vless link without traffic left tokens
@@ -350,10 +357,14 @@ func TestSubService_InfoNode_MultiClient_DeterministicPrimaryEmail(t *testing.T)
 		if err != nil {
 			t.Fatalf("GetSubs error: %v", err)
 		}
-		if len(links) < 1 || !strings.HasPrefix(links[0], "socks://127.0.0.1:1080#") {
-			t.Fatalf("expected dummy socks node, got: %v", links)
+		if len(links) < 1 || !strings.HasPrefix(links[0], "vless://") {
+			t.Fatalf("expected working info connection, got: %v", links)
 		}
-		decodedRemark, _ := url.QueryUnescape(strings.TrimPrefix(links[0], "socks://127.0.0.1:1080#"))
+		infoURL, err := url.Parse(links[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+		decodedRemark := infoURL.Fragment
 		if decodedRemark != "alpha@test.com" {
 			t.Fatalf("expected primaryEmail 'alpha@test.com' (sorted alphabetically), got %q", decodedRemark)
 		}

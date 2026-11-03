@@ -2,15 +2,26 @@ package sub
 
 import (
 	"fmt"
+	"maps"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-yaml"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
+
+type infoNodeClashDocument struct {
+	Proxies []map[string]any `yaml:"proxies"`
+	Groups  []struct {
+		Proxies []string `yaml:"proxies"`
+	} `yaml:"proxy-groups"`
+}
 
 func TestSubClash_InfoNode_Active(t *testing.T) {
 	setupInfoNodeTestDB(t)
@@ -63,11 +74,21 @@ func TestSubClash_InfoNode_Active(t *testing.T) {
 		t.Fatalf("GetClash: %v", err)
 	}
 
-	if !strings.Contains(out, "type: socks5") || !strings.Contains(out, "server: 127.0.0.1") {
-		t.Fatalf("expected socks5 dummy node in clash YAML, got:\n%s", out)
+	var doc infoNodeClashDocument
+	if err := yaml.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Proxies) != 2 || doc.Proxies[0]["type"] != "vless" || doc.Proxies[1]["name"] != "Germany-VLESS" {
+		t.Fatalf("expected info connection + unchanged original proxy, got:\n%s", out)
+	}
+	info, original := maps.Clone(doc.Proxies[0]), maps.Clone(doc.Proxies[1])
+	delete(info, "name")
+	delete(original, "name")
+	if !reflect.DeepEqual(info, original) {
+		t.Fatalf("info proxy must preserve all original connection options, got:\n%s", out)
 	}
 	if !strings.Contains(out, "user1@test.com|📊8.00GB") {
-		t.Fatalf("expected expanded remark on dummy proxy, got:\n%s", out)
+		t.Fatalf("expected expanded remark on info proxy, got:\n%s", out)
 	}
 }
 
@@ -128,7 +149,7 @@ func TestSubClash_InfoNode_Expired(t *testing.T) {
 	if !strings.Contains(out, "Expired") || !strings.Contains(out, "exp@test.com") {
 		t.Fatalf("expected expired remark in clash YAML, got:\n%s", out)
 	}
-	if strings.Contains(out, "Germany-VLESS") {
+	if strings.Contains(out, "Germany-VLESS") || strings.Contains(out, "type: vless") {
 		t.Fatalf("expired subscription must NOT contain working inbound, got:\n%s", out)
 	}
 }
@@ -191,12 +212,12 @@ func TestSubClash_InfoNode_Depleted(t *testing.T) {
 	if !strings.Contains(out, "Traffic Depleted") || !strings.Contains(out, "dep@test.com") {
 		t.Fatalf("expected depleted remark in clash YAML, got:\n%s", out)
 	}
-	if strings.Contains(out, "Germany-VLESS") {
+	if strings.Contains(out, "Germany-VLESS") || strings.Contains(out, "type: vless") {
 		t.Fatalf("depleted subscription must NOT contain working inbound, got:\n%s", out)
 	}
 }
 
-func TestSubClash_InfoNode_ProxyGroupOrder_DoesNotDefaultToDummy(t *testing.T) {
+func TestSubClash_InfoNode_ProxyGroupOrder_PreservesDefaultAndIncludesInfo(t *testing.T) {
 	setupInfoNodeTestDB(t)
 	db := database.GetDB()
 
@@ -234,15 +255,18 @@ func TestSubClash_InfoNode_ProxyGroupOrder_DoesNotDefaultToDummy(t *testing.T) {
 
 	// Status token must be rendered as active
 	if !strings.Contains(out, "active") {
-		t.Fatalf("expected active status in clash dummy remark, got:\n%s", out)
+		t.Fatalf("expected active status in clash info remark, got:\n%s", out)
 	}
 
-	// In proxy-groups, PROXY select group must NOT have the dummy node as first member
-	// PROXY group proxies should begin with real proxy
-	if strings.Contains(out, "user1@test.com|active") && strings.Contains(out, "proxies:\n  - user1@test.com|active") {
-		t.Fatalf("PROXY group must NOT contain dummy info node as member, got:\n%s", out)
+	var doc infoNodeClashDocument
+	if err := yaml.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(out, "proxies:\n  - Germany-VLESS\n  - DIRECT") {
-		t.Fatalf("expected real proxy Germany-VLESS in PROXY group, got:\n%s", out)
+	if len(doc.Groups) != 1 || len(doc.Proxies) != 2 {
+		t.Fatalf("unexpected groups/proxies: %s", out)
+	}
+	want := []string{"Germany-VLESS", doc.Proxies[0]["name"].(string), "DIRECT"}
+	if !reflect.DeepEqual(doc.Groups[0].Proxies, want) {
+		t.Fatalf("group must retain the original default and allow testing/selecting info: got %v, want %v", doc.Groups[0].Proxies, want)
 	}
 }

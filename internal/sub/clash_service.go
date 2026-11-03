@@ -123,17 +123,16 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	traffic.Enable = hasEnabledClient
 	header := subReq.subscriptionUserinfo(traffic)
 
+	var activeInfoProxy map[string]any
 	if mode, remark := subReq.resolveInfoNodeRemark(subId, emails, traffic, len(proxies) > 0); mode != infoNodeNone {
-		dummyProxy := map[string]any{
-			"name":   remark,
-			"type":   "socks5",
-			"server": "127.0.0.1",
-			"port":   1080,
-		}
 		if mode == infoNodeExpired || mode == infoNodeDepleted {
-			proxies = []map[string]any{dummyProxy}
+			proxies = []map[string]any{{
+				"name": remark, "type": "socks5", "server": "127.0.0.1", "port": 1080,
+			}}
 		} else {
-			proxies = append([]map[string]any{dummyProxy}, proxies...)
+			activeInfoProxy = maps.Clone(proxies[0])
+			activeInfoProxy["name"] = remark
+			proxies = append([]map[string]any{activeInfoProxy}, proxies...)
 		}
 	}
 
@@ -144,13 +143,21 @@ func (s *SubClashService) getClash(subId string, host string, legacy bool) (stri
 	ensureUniqueProxyNames(proxies)
 
 	proxyNames := make([]string, 0, len(proxies)+1)
-	for _, proxy := range proxies {
+	for i, proxy := range proxies {
+		// Keep the original default selection; include the working info entry
+		// after the regular nodes so Mihomo can select and health-check it too.
+		if activeInfoProxy != nil && i == 0 {
+			continue
+		}
 		if isDummyProxy(proxy) && len(proxies) > 1 {
 			continue
 		}
 		if name, ok := proxy["name"].(string); ok && name != "" {
 			proxyNames = append(proxyNames, name)
 		}
+	}
+	if activeInfoProxy != nil {
+		proxyNames = append(proxyNames, activeInfoProxy["name"].(string))
 	}
 	proxyNames = append(proxyNames, "DIRECT")
 
