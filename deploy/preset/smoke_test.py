@@ -120,6 +120,10 @@ def http_through_socks(proxy_port, destination_port):
         response = b''
         while value := stream.recv(65536):
             response += value
+            headers, separator, body = response.partition(b'\r\n\r\n')
+            length = re.search(br'(?im)^Content-Length:\s*(\d+)', headers)
+            if separator and length and len(body) >= int(length[1]):
+                break
         return response
 
 
@@ -229,6 +233,19 @@ def main():
                     time.sleep(.25)
             else:
                 raise RuntimeError('Panel did not become ready')
+            restart = urllib.request.Request(base + 'server/restartXrayService', data=b'',
+                                             headers={'Authorization': 'Bearer ' + token}, method='POST')
+            with opener.open(restart, timeout=20) as response:
+                restarted = json.load(response)
+                assert restarted['success'], restarted
+            for _ in range(80):
+                try:
+                    with socket.create_connection(('127.0.0.1', direct_port), timeout=1):
+                        break
+                except OSError:
+                    time.sleep(.25)
+            else:
+                raise RuntimeError('Preset Xray inbound did not become ready')
             with opener.open(f'http://127.0.0.1:{subscription_port}{clash_path}{result["subscriptionId"]}', timeout=10) as response:
                 subscription = response.read().decode()
                 assert subscription.count('type: vless') == 4
@@ -261,6 +278,7 @@ def main():
             # Run the exported info document itself through the pinned Xray core.
             info_port = port()
             info_document['inbounds'] = [{'listen': '127.0.0.1', 'port': info_port, 'protocol': 'socks', 'settings': {'udp': False}}]
+            info_document['log'] = {'loglevel': 'debug'}
             info_path = work / 'info-client.json'
             info_path.write_text(json.dumps(info_document))
             subprocess.run([core, 'run', '-test', '-c', str(info_path)], env=env, check=True, stdout=subprocess.DEVNULL)
@@ -347,6 +365,9 @@ def main():
             print('PASS: actual REALITY/VLESS connections, authenticated residential SOCKS, failure isolation, IPv6 REALITY and certificate-verified HY2, working info subscriptions and Xray connection, repeated initialization.')
         except Exception:
             log.flush()
+            if 'info_document' in locals():
+                proxy = info_document.get('outbounds', [{}])[0]
+                print('Info connection diagnostic:', json.dumps({key: proxy.get(key) for key in ('protocol', 'streamSettings', 'mux')}, ensure_ascii=False))
             print((work / 'runtime.log').read_text(errors='replace')[-6000:])
             raise
         finally:
