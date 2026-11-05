@@ -129,7 +129,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v3.6.0/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v3.6.0/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -197,7 +197,7 @@ update_menu() {
         return 0
     fi
 
-    if replace_xui_script "https://raw.githubusercontent.com/kjxv/3x-ui/video-v3.6.0/x-ui.sh" "false"; then
+    if replace_xui_script "https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v3.6.0/x-ui.sh" "false"; then
         chmod +x ${xui_folder}/x-ui.sh
         echo -e "${green}Update successful. The panel has automatically restarted.${plain}"
         exit 0
@@ -210,7 +210,7 @@ update_menu() {
 legacy_version() {
     echo -e "${yellow}此为视频教程固定版本 v3.6.0，不提供其他版本安装。${plain}"
     echo -e "${yellow}如需重新安装 v3.6.0，请使用以下命令：${plain}"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v3.6.0/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v3.6.0/install.sh)${plain}"
     before_show_menu
 }
 
@@ -273,7 +273,7 @@ uninstall() {
     echo ""
     echo -e "Uninstalled Successfully.\n"
     echo "If you need to install this panel again, you can use below command:"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v3.6.0/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v3.6.0/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
     trap delete_script SIGTERM
@@ -806,7 +806,7 @@ enable_bbr() {
 }
 
 update_shell() {
-    if replace_xui_script "https://raw.githubusercontent.com/kjxv/3x-ui/video-v3.6.0/x-ui.sh" "true"; then
+    if replace_xui_script "https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v3.6.0/x-ui.sh" "true"; then
         LOGI "Upgrade script succeeded, Please rerun the script"
         before_show_menu
     else
