@@ -1,6 +1,6 @@
 services:
   3xui:
-    image: ghcr.io/kjxv/3x-ui:v3.10.2-preset
+    image: ghcr.io/kjxv-1/3x-ui:v3.10.2-preset
     pull_policy: build
     network_mode: host
     build:
