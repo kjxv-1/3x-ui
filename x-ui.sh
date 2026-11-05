@@ -108,7 +108,7 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v2.9.4/install.sh)
+    bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v2.9.4/install.sh)
     if [[ $? == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
@@ -135,7 +135,7 @@ update_menu() {
         return 0
     fi
 
-    curl -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/kjxv/3x-ui/video-v2.9.4/x-ui.sh
+    curl -fLRo /usr/bin/x-ui https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v2.9.4/x-ui.sh
     chmod +x ${xui_folder}/x-ui.sh
     chmod +x /usr/bin/x-ui
 
@@ -151,7 +151,7 @@ update_menu() {
 legacy_version() {
     echo -e "${yellow}此为视频教程固定版本 v2.9.4，不提供其他旧版本安装。${plain}"
     echo -e "${yellow}如需重新安装 v2.9.4，请使用以下命令：${plain}"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v2.9.4/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v2.9.4/install.sh)${plain}"
     before_show_menu
 }
 
@@ -188,7 +188,7 @@ uninstall() {
     echo ""
     echo -e "Uninstalled Successfully.\n"
     echo "If you need to install this panel again, you can use below command:"
-    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv/3x-ui/video-v2.9.4/install.sh)${plain}"
+    echo -e "${green}bash <(curl -Ls https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v2.9.4/install.sh)${plain}"
     echo ""
     # Trap the SIGTERM signal
     trap delete_script SIGTERM
@@ -586,7 +586,7 @@ enable_bbr() {
 }
 
 update_shell() {
-    curl -fLRo /usr/bin/x-ui -z /usr/bin/x-ui https://raw.githubusercontent.com/kjxv/3x-ui/video-v2.9.4/x-ui.sh
+    curl -fLRo /usr/bin/x-ui -z /usr/bin/x-ui https://raw.githubusercontent.com/kjxv-1/3x-ui/video-v2.9.4/x-ui.sh
     if [[ $? != 0 ]]; then
         echo ""
         LOGE "Failed to download script, Please check whether the machine can connect Github"
