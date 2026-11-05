@@ -7,10 +7,10 @@
 在 Linux VPS 上以 root 执行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
-安装包、面板、安装脚本和管理脚本来自 `kjxv/3x-ui` 的本标签，下载后强制验证 SHA256。包内包含校验过的固定 Xray 内核。
+安装包、面板、安装脚本和管理脚本来自 `kjxv-1/3x-ui` 的本标签，下载后强制验证 SHA256。包内包含校验过的固定 Xray 内核。
 
 ## 首次部署生成的节点
 
@@ -84,8 +84,8 @@ HY2 复用安装时配置的面板 TLS 证书及密钥文件，SNI 从证书覆�
 ## Docker
 
 ```bash
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
-docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
+docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2
 ```
 
 容器首次启动没有证书时，HY2 保留为待配置状态。容器使用 HY2 时，需要持久挂载有效证书文件，并在面板设置对应路径和 SNI。

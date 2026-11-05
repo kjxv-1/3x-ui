@@ -24,7 +24,7 @@ Virtuozzo、Arch、Manjaro、openSUSE（Tumbleweed/Leap）、Alpine——以及 
 本分支固定安装 `v3.10.2-preset-ipv6-hy2`，运行内核为 `v26.6.27`。
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
 安装完成后，记下打印出的登录信息并运行 `x-ui` 打开
@@ -39,7 +39,7 @@ bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ip
 `docker-compose.yml` 和 `Dockerfile`）并启动：
 
 ```bash
-git clone --branch codex/v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git
+git clone --branch codex/v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git
 cd 3x-ui
 docker compose up -d
 ```
@@ -54,7 +54,7 @@ docker compose --profile postgres up -d
 先从本仓库的专用分支构建本地镜像，再运行容器。Fail2ban 需要以下命令中的网络权限。
 
 ```bash title="docker run"
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
 
 docker run -d \
   --cap-add=NET_ADMIN \
@@ -65,7 +65,7 @@ docker run -d \
   --network=host \
   --restart=unless-stopped \
   --name 3x-ui \
-  ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2
+  ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2
 ```
 
 `db/` 卷保存 SQLite 数据库（`/etc/x-ui/x-ui.db`），`cert/`
@@ -75,7 +75,7 @@ docker run -d \
 
 <Tab value="Manual">
 
-高级用户可从[发布页面](https://github.com/kjxv/3x-ui/releases/tag/v3.10.2-preset-ipv6-hy2)
+高级用户可从[发布页面](https://github.com/kjxv-1/3x-ui/releases/tag/v3.10.2-preset-ipv6-hy2)
 下载适用于你架构的发布归档包，解压后
 将二进制文件作为 systemd 服务运行。安装脚本正是将这些步骤自动化，
 因此除非你有特定理由要手动安装，否则更推荐使用脚本。
@@ -108,10 +108,10 @@ docker run -d \
 `/etc/x-ui/install-result.env`：
 
 ```bash
-XUI_NONINTERACTIVE=1 bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+XUI_NONINTERACTIVE=1 bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
-仓库的 [`deploy/`](https://github.com/kjxv/3x-ui/tree/codex/v3.10.2-preset-ipv6-hy2/deploy)
+仓库的 [`deploy/`](https://github.com/kjxv-1/3x-ui/tree/codex/v3.10.2-preset-ipv6-hy2/deploy)
 目录提供了现成的 **cloud-init** user-data，可用于在任意云平台上进行无人值守安装
 （Hetzner、AWS、DigitalOcean、Vultr、GCP、Azure、Oracle）。
 

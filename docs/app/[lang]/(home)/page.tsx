@@ -15,7 +15,7 @@ export function generateStaticParams() {
 }
 
 const INSTALL_COMMAND =
-  'bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)';
+  'bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)';
 
 export default async function HomePage({ params }: PageProps<'/[lang]'>) {
   const { lang } = await params;

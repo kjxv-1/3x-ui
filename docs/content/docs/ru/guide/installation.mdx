@@ -26,7 +26,7 @@ Virtuozzo, Arch, Manjaro, openSUSE (Tumbleweed/Leap), Alpine — а также �
 This branch installs the maintained `v3.10.2-preset-ipv6-hy2` with Xray `v26.6.27`.
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
 По завершении запишите выведенные данные для входа и выполните `x-ui`, чтобы
@@ -41,7 +41,7 @@ bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ip
 (или скопируйте его файлы `docker-compose.yml` и `Dockerfile`) и запустите:
 
 ```bash
-git clone --branch codex/v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git
+git clone --branch codex/v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git
 cd 3x-ui
 docker compose up -d
 ```
@@ -56,7 +56,7 @@ docker compose --profile postgres up -d
 Build a local image from this fork before starting the container. Fail2ban needs the network capabilities shown below.
 
 ```bash title="docker run"
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
 
 docker run -d \
   --cap-add=NET_ADMIN \
@@ -67,7 +67,7 @@ docker run -d \
   --network=host \
   --restart=unless-stopped \
   --name 3x-ui \
-  ghcr.io/kjxv/3x-ui:v3.10.2-preset-ipv6-hy2
+  ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2
 ```
 
 Том `db/` хранит базу данных SQLite (`/etc/x-ui/x-ui.db`), а `cert/` — TLS-сертификаты,
@@ -78,7 +78,7 @@ docker run -d \
 <Tab value="Manual">
 
 Опытные пользователи могут скачать архив релиза для своей архитектуры со
-[страницы релизов](https://github.com/kjxv/3x-ui/releases/tag/v3.10.2-preset-ipv6-hy2), распаковать его и
+[страницы релизов](https://github.com/kjxv-1/3x-ui/releases/tag/v3.10.2-preset-ipv6-hy2), распаковать его и
 запустить бинарный файл как службу systemd. Установочный скрипт автоматизирует
 ровно эти шаги, поэтому он предпочтительнее, если только у вас нет особой причины
 устанавливать вручную.
@@ -113,10 +113,10 @@ docker run -d \
 записав их в `/etc/x-ui/install-result.env`:
 
 ```bash
-XUI_NONINTERACTIVE=1 bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+XUI_NONINTERACTIVE=1 bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
 ```
 
-В каталоге [`deploy/`](https://github.com/kjxv/3x-ui/tree/codex/v3.10.2-preset-ipv6-hy2/deploy)
+В каталоге [`deploy/`](https://github.com/kjxv-1/3x-ui/tree/codex/v3.10.2-preset-ipv6-hy2/deploy)
 репозитория есть готовые **cloud-init** user-data для автоматической установки в
 любом облаке (Hetzner, AWS, DigitalOcean, Vultr, GCP, Azure, Oracle).
 

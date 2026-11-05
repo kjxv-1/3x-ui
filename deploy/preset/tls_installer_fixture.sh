@@ -60,10 +60,10 @@ for index in "${!args[@]}"; do
             args[$index]=file:///tmp/install-acme-fixture.sh ;;
         https://api4.ipify.org)
             printf '127.0.0.1\n200'; exit 0 ;;
-        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2/*)
+        https://github.com/kjxv-1/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset-ipv6-hy2/*)
-            raw_path="${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/}"
+        https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/*)
+            raw_path="${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/}"
             args[$index]="file:///source/${raw_path#*/}" ;;
     esac
 done
