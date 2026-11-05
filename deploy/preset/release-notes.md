@@ -7,10 +7,10 @@
 以 root 在 Linux VPS 上运行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
 ```
 
-面板程序、管理脚本和安装包从 `kjxv/3x-ui` 下载；安装前必须验证 SHA256。Xray 运行内核固定为 `v26.6.27`，构建时校验官方发布包的 SHA256 后将内核打包进本仓库安装包，部署时不依赖原作者的面板安装包。
+面板程序、管理脚本和安装包从 `kjxv-1/3x-ui` 下载；安装前必须验证 SHA256。Xray 运行内核固定为 `v26.6.27`，构建时校验官方发布包的 SHA256 后将内核打包进本仓库安装包，部署时不依赖原作者的面板安装包。
 
 ## 默认配置
 

@@ -7,10 +7,10 @@
 以 root 在 Linux VPS 上运行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset/deploy/preset/install.sh)
 ```
 
-面板程序、管理脚本和安装包从 `kjxv/3x-ui` 下载；安装前必须验证 SHA256。Xray 运行内核固定为 `v26.6.27`，构建时校验官方发布包的 SHA256 后将内核打包进本仓库安装包，部署时不依赖原作者的面板安装包。
+面板程序、管理脚本和安装包从 `kjxv-1/3x-ui` 下载；安装前必须验证 SHA256。Xray 运行内核固定为 `v26.6.27`，构建时校验官方发布包的 SHA256 后将内核打包进本仓库安装包，部署时不依赖原作者的面板安装包。
 
 ## 默认配置
 
@@ -42,8 +42,8 @@ bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/de
 在 Linux 上可从本仓库构建本地镜像后启动，无需拉取原作者镜像或登录镜像仓库：
 
 ```bash
-docker build -t ghcr.io/kjxv/3x-ui:v3.10.2-preset https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset
-docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv/3x-ui:v3.10.2-preset
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset
+docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv-1/3x-ui:v3.10.2-preset
 ```
 
 镜像在构建时下载并校验本仓库已经通过检查的发布包，使用相同的固定内核与首次初始化流程。主机网络让随机入站端口和订阅端口能按实际配置对外服务。

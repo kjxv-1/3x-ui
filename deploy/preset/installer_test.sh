@@ -16,10 +16,10 @@ cat > /usr/local/bin/curl <<"CURL"
 args=("$@")
 for index in "${!args[@]}"; do
     case "${args[$index]}" in
-        https://github.com/kjxv/3x-ui/releases/download/v3.10.2-preset/*)
+        https://github.com/kjxv-1/3x-ui/releases/download/v3.10.2-preset/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/*)
-            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/}" ;;
+        https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset/*)
+            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset/}" ;;
     esac
 done
 if [[ " ${args[*]} " == *"%{http_code}"* && " ${args[*]} " == *"I"* ]]; then

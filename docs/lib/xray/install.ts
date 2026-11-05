@@ -12,9 +12,9 @@ export interface InstallOptions {
 }
 
 const REPO_RAW =
-  'https://raw.githubusercontent.com/kjxv/3x-ui/v3.10.2-preset/deploy/preset/install.sh';
-const IMAGE = 'ghcr.io/kjxv/3x-ui:v3.10.2-preset';
-const SOURCE = 'https://github.com/kjxv/3x-ui.git#codex/v3.10.2-preset';
+  'https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset/deploy/preset/install.sh';
+const IMAGE = 'ghcr.io/kjxv-1/3x-ui:v3.10.2-preset';
+const SOURCE = 'https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset';
 
 /** This branch deploys one maintained preset, independent of upstream latest. */
 export function buildScriptCommand(_options: InstallOptions): string {

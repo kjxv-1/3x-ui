@@ -28,7 +28,7 @@ def save():
     state_path.write_text(json.dumps(state),encoding='utf-8')
 if args[0]=='api':
     endpoint=next(a for a in args[1:] if a.startswith('repos/'))
-    assert endpoint.startswith('repos/kjxv/3x-ui/')
+    assert endpoint.startswith('repos/kjxv-1/3x-ui/')
     method=option('--method') if '--method' in args else 'GET'
     if method=='GET':
         if endpoint.endswith('/git/ref/heads/codex/v3.10.2-preset'):
@@ -76,7 +76,7 @@ else:
 
 
 class PublishTests(unittest.TestCase):
-    def run_case(self, fail_upload=False, missing_package=False, repository='kjxv/3x-ui'):
+    def run_case(self, fail_upload=False, missing_package=False, repository='kjxv-1/3x-ui'):
         bash = r'C:/Program Files/Git/bin/bash.exe' if os.name == 'nt' else shutil.which('bash')
         self.assertTrue(bash)
         with tempfile.TemporaryDirectory(prefix='preset-publication-test-') as temporary:
