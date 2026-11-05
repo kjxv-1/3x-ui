@@ -11,7 +11,7 @@
 部署命令：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
 ```
 
 登录后，在 Xray 设置 → 出站编辑 `默认`，填写住宅 Socks5 的地址、端口及认证信息，保存后导入 Clash/Mihomo 订阅。

@@ -71,7 +71,7 @@
 在 Linux VPS 上以 root 运行，安装本仓库的 **3.6.0 默认节点预设版**：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
 ```
 
 这是 `v3.6.0-preset.4` 的固定部署命令，后续维护继续使用同一条命令。
@@ -81,7 +81,7 @@ bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/d
 
 安装过程中会生成随机的用户名、密码和访问路径。安装完成后，运行 `x-ui` 打开管理菜单。重新安装会保留已有节点和用户设置。
 
-详细步骤见[预设版安装说明](https://github.com/kjxv/3x-ui/blob/v3.6.0-preset.4/deploy/preset/README.md)。
+详细步骤见[预设版安装说明](https://github.com/kjxv-1/3x-ui/blob/v3.6.0-preset.4/deploy/preset/README.md)。
 
 ## 支持的平台
 

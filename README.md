@@ -71,7 +71,7 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 Install this repository's **3.6.0 default-node preset** on a Linux VPS as root:
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
 ```
 
 This is the fixed deployment command for `v3.6.0-preset.4`; future maintenance updates use the same command.
@@ -81,7 +81,7 @@ After signing in, open **Xray settings → Outbounds**, edit **默认**, and ent
 
 During installation a random username, password, and access path are generated. After installation, run `x-ui` to open the management menu. Reinstalling preserves existing nodes and user settings.
 
-See the [preset installation guide](https://github.com/kjxv/3x-ui/blob/v3.6.0-preset.4/deploy/preset/README.md) for details.
+See the [preset installation guide](https://github.com/kjxv-1/3x-ui/blob/v3.6.0-preset.4/deploy/preset/README.md) for details.
 
 ## Supported Platforms
 

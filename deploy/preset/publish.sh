@@ -3,7 +3,7 @@
 # Only this preset tag can move; original tutorial versions are never touched.
 set -euo pipefail
 readonly tag="v3.6.0-preset.4"
-readonly repo="kjxv/3x-ui"
+readonly repo="kjxv-1/3x-ui"
 readonly branch="codex/v3.6.0-preset"
 [[ "${GITHUB_REPOSITORY:?}" == "$repo" ]]
 [[ "${GITHUB_SHA:?}" =~ ^[0-9a-f]{40}$ ]]

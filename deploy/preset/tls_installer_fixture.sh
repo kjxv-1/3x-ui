@@ -39,10 +39,10 @@ for index in "${!args[@]}"; do
             args[$index]=file:///tmp/install-acme-fixture.sh ;;
         https://api4.ipify.org)
             printf '127.0.0.1\n200'; exit 0 ;;
-        https://github.com/kjxv/3x-ui/releases/download/v*-preset.*/*)
+        https://github.com/kjxv-1/3x-ui/releases/download/v*-preset.*/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v*-preset.*/*)
-            raw_path="${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/}"
+        https://raw.githubusercontent.com/kjxv-1/3x-ui/v*-preset.*/*)
+            raw_path="${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/}"
             args[$index]="file:///source/${raw_path#*/}" ;;
     esac
 done

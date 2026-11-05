@@ -15,10 +15,10 @@ cat > /usr/local/bin/curl <<"CURL"
 args=("$@")
 for index in "${!args[@]}"; do
     case "${args[$index]}" in
-        https://github.com/kjxv/3x-ui/releases/download/v3.6.0-preset.4/*)
+        https://github.com/kjxv-1/3x-ui/releases/download/v3.6.0-preset.4/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/*)
-            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/}" ;;
+        https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/*)
+            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/}" ;;
     esac
 done
 exec /usr/bin/curl "${args[@]}"

@@ -9,7 +9,7 @@
 在干净的 Linux VPS 上以 root 运行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.6.0-preset.4/deploy/preset/install.sh)
 ```
 
 安装程序及辅助脚本固定到同一个标签，安装包全部从本仓库下载，下载后检查 SHA256。
