@@ -25,6 +25,7 @@ import {
   InfoCircleOutlined,
   DeleteOutlined,
   SearchOutlined,
+  SortAscendingOutlined,
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
@@ -34,6 +35,7 @@ import { buildRowActionsMenu } from './RowActions';
 import { useInboundColumns } from './useInboundColumns';
 import { buildHostRemarksByInboundId, formatHostRemarksLabel } from './helpers';
 import InboundStatsModal from './InboundStatsModal';
+import InboundSortModal from './InboundSortModal';
 import type { DBInboundRecord, GeneralAction, InboundListProps, RowAction } from './types';
 import './InboundList.css';
 
@@ -67,6 +69,7 @@ export default function InboundList({
 }: InboundListProps) {
   const { t } = useTranslation();
   const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
+  const [sortOpen, setSortOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
   // Node filter (#4997): 'all' shows everything, 0 is the local-panel
   // sentinel (inbounds without a nodeId), otherwise a node id. Session-only.
@@ -217,7 +220,7 @@ export default function InboundList({
     <Card
       hoverable
       title={
-        <Space>
+        <Space wrap>
           <Button
             type="primary"
             onClick={onAddInbound}
@@ -235,6 +238,18 @@ export default function InboundList({
               {!isMobile && t('pages.inbounds.generalActions')}
             </Button>
           </Dropdown>
+          {subEnable && (
+            <Tooltip title={t('pages.inbounds.subscriptionSort.title')}>
+              <Button
+                icon={<SortAscendingOutlined />}
+                onClick={() => setSortOpen(true)}
+                disabled={dbInbounds.length === 0}
+                aria-label={t('pages.inbounds.subscriptionSort.title')}
+              >
+                {!isMobile && t('pages.inbounds.subscriptionSort.title')}
+              </Button>
+            </Tooltip>
+          )}
           {showNodeFilter && (
             <Select
               value={nodeFilter}
@@ -386,6 +401,7 @@ export default function InboundList({
         )}
       </Space>
 
+      {sortOpen && <InboundSortModal onClose={() => setSortOpen(false)} />}
       <InboundStatsModal
         open={isMobile && !!statsRecord}
         record={statsRecord}

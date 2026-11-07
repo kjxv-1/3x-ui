@@ -425,6 +425,23 @@
         "streamHelp": "Xray stream 块包装："
       },
       "subSortIndex": "订阅排序",
+      "subscriptionSort": {
+        "title": "订阅排序",
+        "help": "按备注批量排序当前面板的全部入站，包括被筛选隐藏的入站。数字按自然顺序排列，同名按 ID 排列；保存后将订阅排序依次设为 1、2、3…。保存后请在客户端更新订阅。",
+        "asc": "正序",
+        "desc": "反序",
+        "refresh": "刷新预览",
+        "scope": "全部 {count} 个入站",
+        "newIndex": "新序号",
+        "oldIndex": "原序号",
+        "save": "保存订阅顺序",
+        "pending": "当前仅预览，将修改 {count} 项。节点连接参数保持不变。",
+        "progress": "正在保存 {count} / {total}，请保持页面打开。",
+        "loadFailed": "读取入站失败，请刷新预览后重试。",
+        "stale": "预览后入站发生了变化，本次尚未保存。请刷新预览并重新确认顺序。",
+        "saveFailed": "保存中断，已确认成功 {count} 项，部分修改可能已经保存。请刷新预览，核对当前顺序后重试。",
+        "saved": "订阅顺序已保存，请在客户端更新订阅。"
+      },
       "inboundInfo": "入站信息",
       "exportInbound": "导出入站规则",
       "import": "导入",
