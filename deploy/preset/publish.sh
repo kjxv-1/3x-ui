@@ -24,29 +24,43 @@ PY
 cp install.sh x-ui.sh update.sh deploy/preset/README.md "$assets/"
 work="$(mktemp -d)"
 trap 'rm -rf -- "$work"' EXIT
+refresh_release() {
+    # The by-tag REST endpoint excludes draft releases. List authenticated
+    # releases instead, so interrupted drafts can be verified and resumed.
+    gh api --paginate --slurp "repos/$repo/releases" > "$work/releases.json"
+    python3 - "$work" "$tag" <<'PY'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+items = [r for page in json.load(open(root / 'releases.json')) for r in page if r['tag_name'] == sys.argv[2]]
+assert len(items) <= 1, 'Ambiguous release tag'
+release = items[0] if items else None
+(root / 'release.json').write_text(json.dumps(release))
+(root / 'status').write_text('none' if release is None else 'draft' if release['draft'] else 'published')
+assert release is None or not release.get('immutable', False) or not release['draft'], 'Immutable draft cannot be resumed'
+PY
+}
+refresh_release
 if gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha' > "$work/ref" 2>/dev/null; then
-    [[ "$(cat "$work/ref")" == "$GITHUB_SHA" ]] || {
-        echo 'This fixed tag belongs to another commit; refusing to move it.' >&2; exit 1;
-    }
+    if [[ "$(cat "$work/ref")" != "$GITHUB_SHA" ]]; then
+        [[ "$(cat "$work/status")" == draft ]] || {
+            echo 'This fixed tag belongs to another commit; refusing to move it.' >&2; exit 1;
+        }
+        # Only this version's unpublished draft may follow a repaired build.
+        gh api --method PATCH "repos/$repo/git/refs/tags/$tag" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+    fi
 else
     gh api --method POST "repos/$repo/git/refs" -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA" >/dev/null
 fi
-if gh api "repos/$repo/releases/tags/$tag" > "$work/release.json" 2>/dev/null; then
-    if python3 - "$work/release.json" <<'PY'
-import json, sys
-sys.exit(0 if not json.load(open(sys.argv[1]))['draft'] else 1)
-PY
-    then
-        echo 'This commit is already published; the fixed release is unchanged.'
-        exit 0
-    fi
-else
+if [[ "$(cat "$work/status")" == published ]]; then
+    echo 'This commit is already published; the fixed release is unchanged.'
+    exit 0
+elif [[ "$(cat "$work/status")" == none ]]; then
     gh release create "$tag" --repo "$repo" --verify-tag --draft \
         --title '3X-UI 3.10.2 排序增强版（IPv6 + HY2）' --notes-file deploy/preset/release-notes.md
 fi
 gh release upload "$tag" "$assets/"* --repo "$repo" --clobber
-gh api "repos/$repo/releases/tags/$tag" > "$work/uploaded.json"
-python3 - "$assets" "$work/uploaded.json" <<'PY'
+refresh_release
+python3 - "$assets" "$work/release.json" <<'PY'
 import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 local = {p.name: p for p in root.iterdir() if p.is_file()}

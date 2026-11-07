@@ -33,16 +33,18 @@ if args[0]=='api':
     elif endpoint.endswith('/git/refs') and method=='POST':
         assert 'ref=refs/tags/v3.10.2-preset-sort' in args
         s['ref']=next(a[4:] for a in args if a.startswith('sha=')); save()
-    elif endpoint.endswith('/releases/tags/v3.10.2-preset-sort'):
-        if s['release'] is None: sys.exit(1)
+    elif endpoint.endswith('/git/refs/tags/v3.10.2-preset-sort') and method=='PATCH':
+        assert s['release']['draft']
+        s['ref']=next(a[4:] for a in args if a.startswith('sha=')); save()
+    elif endpoint.endswith('/releases'):
         assets=[]
         for p in (root/'assets').iterdir():
             assets.append({'name':p.name,'size':p.stat().st_size,'digest':'sha256:'+hashlib.sha256(p.read_bytes()).hexdigest()})
-        print(json.dumps(dict(s['release'],assets=assets)))
+        print(json.dumps([[dict(s['release'],assets=assets)] if s['release'] else []]))
     else: raise RuntimeError(args)
 elif args[:2]==['release','create']:
     assert args[2]=='v3.10.2-preset-sort' and '--draft' in args
-    s['release']={'draft':True}; save()
+    s['release']={'draft':True,'tag_name':'v3.10.2-preset-sort'}; save()
 elif args[:2]==['release','upload']:
     assert args[2]=='v3.10.2-preset-sort' and s['release']['draft']
     for i,name in enumerate(args[3:args.index('--repo')]):
@@ -64,8 +66,9 @@ class PublishTests(unittest.TestCase):
             state=root/'state'; state.mkdir(); (state/'assets').mkdir()
             initial={'ref':None,'release':None,'oldTags':{'v3.10.2-preset-ipv6-hy2':'b'*40},'latest':'v3.6.0'}
             if mode=='wrong-tag': initial['ref']='c'*40
-            if mode in ('published','draft'):
-                initial['ref']=SHA; initial['release']={'draft':mode=='draft'}
+            if mode in ('published','draft','repaired-draft','published-other'):
+                initial['ref']='c'*40 if mode in ('repaired-draft','published-other') else SHA
+                initial['release']={'draft':mode in ('draft','repaired-draft'),'tag_name':TAG}
             (state/'state.json').write_text(json.dumps(initial))
             packages=root/'packages'; packages.mkdir()
             for name in PACKAGES: (packages/name).write_text('package '+name)
@@ -93,8 +96,9 @@ class PublishTests(unittest.TestCase):
             calls=[json.loads(s) for s in (state/'calls.jsonl').read_text().splitlines()] if (state/'calls.jsonl').exists() else []
             self.assertEqual(final['oldTags'],initial['oldTags'])
             self.assertEqual(final['latest'],initial['latest'])
-            self.assertFalse(any('--method' in c and 'PATCH' in c for c in calls))
-            if mode in ('new','draft'):
+            if mode != 'repaired-draft':
+                self.assertFalse(any('--method' in c and 'PATCH' in c for c in calls))
+            if mode in ('new','draft','repaired-draft'):
                 self.assertEqual(result.returncode,0,result.stderr)
                 self.assertEqual(final['ref'],SHA)
                 self.assertFalse(final['release']['draft'])
@@ -113,9 +117,11 @@ class PublishTests(unittest.TestCase):
 
     def test_new_fixed_release_has_all_packages_checksums_and_commands(self): self.run_case()
     def test_existing_draft_can_resume(self): self.run_case('draft')
+    def test_repaired_build_can_replace_its_own_unpublished_draft(self): self.run_case('repaired-draft')
     def test_failed_upload_remains_unpublished(self): self.run_case('fail-upload')
     def test_published_version_is_never_overwritten(self): self.run_case('published')
     def test_existing_different_tag_is_never_moved(self): self.run_case('wrong-tag')
+    def test_published_tag_never_moves_to_a_different_commit(self): self.run_case('published-other')
     def test_missing_architecture_is_rejected(self): self.run_case('missing')
     def test_wrong_account_is_rejected(self): self.run_case('wrong-repo')
 
