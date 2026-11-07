@@ -425,6 +425,23 @@
         "streamHelp": "Xray stream 區塊包裝："
       },
       "subSortIndex": "訂閱排序",
+      "subscriptionSort": {
+        "title": "訂閱排序",
+        "help": "按備註排序目前面板的全部入站，包括被篩選隱藏的入站。數字按自然順序排列，同名按 ID 排列；儲存後請在用戶端更新訂閱。",
+        "asc": "正序",
+        "desc": "反序",
+        "refresh": "重新整理預覽",
+        "scope": "全部 {count} 個入站",
+        "newIndex": "新序號",
+        "oldIndex": "原序號",
+        "save": "儲存訂閱順序",
+        "pending": "目前僅預覽，將修改 {count} 項。節點連線參數保持不變。",
+        "progress": "正在儲存 {count} / {total}，請保持頁面開啟。",
+        "loadFailed": "讀取入站失敗，請重新整理預覽後重試。",
+        "stale": "預覽後入站發生變更，本次尚未儲存。請重新整理預覽並確認順序。",
+        "saveFailed": "儲存中斷，已確認成功 {count} 項，部分變更可能已儲存。請重新整理預覽後重試。",
+        "saved": "訂閱順序已儲存，請在用戶端更新訂閱。"
+      },
       "inboundInfo": "入站資訊",
       "exportInbound": "匯出入站規則",
       "import": "匯入",

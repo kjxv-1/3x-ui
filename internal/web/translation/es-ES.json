@@ -425,6 +425,23 @@
         "streamHelp": "Envoltorio del bloque stream de Xray:"
       },
       "subSortIndex": "Orden sub",
+      "subscriptionSort": {
+        "title": "Orden de suscripción",
+        "help": "Ordena por nombre todas las entradas del panel, incluidas las ocultas por filtros. Los números usan orden natural; los nombres iguales se ordenan por ID. Actualiza la suscripción del cliente después de guardar.",
+        "asc": "Ascendente",
+        "desc": "Descendente",
+        "refresh": "Actualizar vista previa",
+        "scope": "Las {count} entradas",
+        "newIndex": "Orden nuevo",
+        "oldIndex": "Orden anterior",
+        "save": "Guardar orden de suscripción",
+        "pending": "Solo vista previa; cambiarán {count} entradas. La conexión no cambia.",
+        "progress": "Guardando {count} / {total}. Mantén abierta esta página.",
+        "loadFailed": "No se pudieron cargar las entradas. Actualiza la vista previa.",
+        "stale": "Las entradas cambiaron después de la vista previa. No se guardó nada. Actualiza y comprueba el orden.",
+        "saveFailed": "Guardado interrumpido tras {count} cambios confirmados. Algunos cambios pueden estar guardados. Actualiza la vista previa antes de reintentar.",
+        "saved": "Orden guardado. Actualiza la suscripción del cliente."
+      },
       "inboundInfo": "Información de entrada",
       "exportInbound": "Exportación entrante",
       "import": "Importar",

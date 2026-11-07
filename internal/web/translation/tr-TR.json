@@ -425,6 +425,23 @@
         "streamHelp": "Xray stream bloğunun sarmalayıcısı:"
       },
       "subSortIndex": "Sıralama",
+      "subscriptionSort": {
+        "title": "Abonelik sırası",
+        "help": "Filtrelerin gizledikleri dahil paneldeki tüm gelen bağlantıları ada göre sıralayın. Sayılar doğal sıradadır; aynı adlar ID ile sıralanır. Kaydettikten sonra istemcide aboneliği güncelleyin.",
+        "asc": "Artan",
+        "desc": "Azalan",
+        "refresh": "Önizlemeyi yenile",
+        "scope": "Tüm {count} gelen bağlantı",
+        "newIndex": "Yeni sıra",
+        "oldIndex": "Eski sıra",
+        "save": "Abonelik sırasını kaydet",
+        "pending": "Yalnızca önizleme; {count} kayıt değişecek. Bağlantı ayarları korunur.",
+        "progress": "Kaydediliyor {count} / {total}. Sayfayı açık tutun.",
+        "loadFailed": "Gelen bağlantılar yüklenemedi. Önizlemeyi yenileyin.",
+        "stale": "Önizlemeden sonra kayıtlar değişti. Hiçbir şey kaydedilmedi. Yenileyip sırayı kontrol edin.",
+        "saveFailed": "Onaylanan {count} güncellemeden sonra kayıt kesildi. Bazı değişiklikler kaydedilmiş olabilir. Yeniden denemeden önce önizlemeyi yenileyin.",
+        "saved": "Sıra kaydedildi. İstemcide aboneliği güncelleyin."
+      },
       "inboundInfo": "Gelen Bağlantı Bilgileri",
       "exportInbound": "Gelen Bağlantını Dışa Aktar",
       "import": "İçe Aktar",

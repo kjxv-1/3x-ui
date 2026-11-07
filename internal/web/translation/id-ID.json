@@ -425,6 +425,23 @@
         "streamHelp": "Pembungkus blok stream Xray:"
       },
       "subSortIndex": "Urutan sub",
+      "subscriptionSort": {
+        "title": "Urutan langganan",
+        "help": "Urutkan semua inbound panel berdasarkan nama, termasuk yang disembunyikan filter. Angka diurutkan secara alami; nama yang sama berdasarkan ID. Perbarui langganan klien setelah menyimpan.",
+        "asc": "Menaik",
+        "desc": "Menurun",
+        "refresh": "Segarkan pratinjau",
+        "scope": "Semua {count} inbound",
+        "newIndex": "Urutan baru",
+        "oldIndex": "Urutan lama",
+        "save": "Simpan urutan langganan",
+        "pending": "Hanya pratinjau; {count} entri akan berubah. Pengaturan koneksi tetap sama.",
+        "progress": "Menyimpan {count} / {total}. Biarkan halaman terbuka.",
+        "loadFailed": "Gagal memuat inbound. Segarkan pratinjau.",
+        "stale": "Inbound berubah setelah pratinjau. Belum ada yang disimpan. Segarkan dan periksa urutannya.",
+        "saveFailed": "Penyimpanan terhenti setelah {count} pembaruan dikonfirmasi. Sebagian mungkin sudah tersimpan. Segarkan pratinjau sebelum mencoba lagi.",
+        "saved": "Urutan tersimpan. Perbarui langganan di klien."
+      },
       "inboundInfo": "Informasi Inbound",
       "exportInbound": "Ekspor Masuk",
       "import": "Impor",

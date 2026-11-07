@@ -425,6 +425,23 @@
         "streamHelp": "Bao đóng khối stream của Xray:"
       },
       "subSortIndex": "Thứ tự sub",
+      "subscriptionSort": {
+        "title": "Thứ tự đăng ký",
+        "help": "Sắp xếp theo tên tất cả inbound trong bảng điều khiển, kể cả mục bị bộ lọc ẩn. Số được sắp xếp tự nhiên; tên trùng theo ID. Cập nhật đăng ký trên ứng dụng sau khi lưu.",
+        "asc": "Tăng dần",
+        "desc": "Giảm dần",
+        "refresh": "Làm mới xem trước",
+        "scope": "Tất cả {count} inbound",
+        "newIndex": "Thứ tự mới",
+        "oldIndex": "Thứ tự cũ",
+        "save": "Lưu thứ tự đăng ký",
+        "pending": "Chỉ xem trước; {count} mục sẽ thay đổi. Giữ nguyên cấu hình kết nối.",
+        "progress": "Đang lưu {count} / {total}. Hãy giữ trang mở.",
+        "loadFailed": "Không tải được inbound. Hãy làm mới xem trước.",
+        "stale": "Inbound đã thay đổi sau khi xem trước. Chưa lưu gì. Hãy làm mới và kiểm tra thứ tự.",
+        "saveFailed": "Lưu bị gián đoạn sau {count} thay đổi đã xác nhận. Một số thay đổi có thể đã lưu. Làm mới xem trước rồi thử lại.",
+        "saved": "Đã lưu thứ tự. Hãy cập nhật đăng ký trên ứng dụng."
+      },
       "inboundInfo": "Thông tin Inbound",
       "exportInbound": "Xuất nhập khẩu",
       "import": "Nhập",
