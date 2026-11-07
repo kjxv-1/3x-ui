@@ -1,16 +1,30 @@
-# 3X-UI 3.10.2 IPv6 + HY2 默认节点版
+# 3X-UI 3.10.2 排序增强版（IPv6 + HY2）
 
-基于 3X-UI v3.10.2，Xray 内核继续固定为 **v26.6.27**。独立分支 `codex/v3.10.2-preset-ipv6-hy2`，独立标签 `v3.10.2-preset-ipv6-hy2`。旧 `v3.10.2-preset`、v3.6.0 视频版及其安装包保持不变。
+新账号仓库：`kjxv-1/3x-ui`。独立分支 `codex/v3.10.2-preset-sort`，独立固定标签 **`v3.10.2-preset-sort`**。本版增加入站列表的「订阅排序」按钮，并提供已有面板的备份更新命令。原 `v3.10.2-preset-ipv6-hy2`、`v3.10.2-preset`、v3.6.0 视频版本和安装包均保留；本版发布后不移动标签或替换附件。
 
 ## 一键部署
 
 在 Linux VPS 上以 root 执行：
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-sort/deploy/preset/install.sh)
 ```
 
 安装包、面板、安装脚本和管理脚本来自 `kjxv-1/3x-ui` 的本标签，下载后强制验证 SHA256。包内包含校验过的固定 Xray 内核。
+
+## 已有面板：一条命令更新
+
+已部署 3.10.2 系列、使用标准 SQLite `/etc/x-ui/x-ui.db`、由 systemd 或 OpenRC 管理的 Linux 面板，以 root 执行：
+
+```bash
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-sort/deploy/preset/update.sh)
+```
+
+该命令先下载对应 CPU 架构的安装包并验证 SHA256 和面板版本，再短暂停止服务。自动备份旧面板程序、管理脚本和整个 `/etc/x-ui`，仅替换面板程序及管理脚本，然后检查服务和本地登录页面。更新失败时自动恢复旧程序和数据库。备份保存在 `/var/backups/3x-ui/时间-进程号/`，目录权限 700，请妥善保留。更新会短暂中断代理连接。
+
+现有节点名称、端口、UUID、客户端、额度、订阅 ID/路径、路由、住宅认证和证书配置保留。**已有安装的 Xray/HY2 内核不替换，不重新申请证书，不重复创建默认节点。** 原订阅 URL 继续使用；仅服务器更新来源改为新账号。自定义数据库目录、PostgreSQL、其他基础版本和 Docker 不使用此脚本，会在修改前提示。
+
+看到「更新成功」后，浏览器按 **Ctrl+F5** 刷新，进入 **入站列表 → 订阅排序 → 正序/反序 → 预览 → 保存订阅顺序**，最后在客户端更新订阅。
 
 ## 首次部署生成的节点
 
@@ -81,7 +95,7 @@ HY2 复用安装时配置的面板 TLS 证书及密钥文件，SNI 从证书覆�
 
 保存后，在 v2rayN、Clash/Mihomo 等客户端更新订阅。该操作只修改订阅排序，不改端口、协议、客户端或流量额度，不需要重启面板。预览后列表有变化时会要求刷新预览；如果保存中断，界面提示已确认的成功数量，请刷新预览后再重试。不要在保存过程中关闭页面。
 
-功能保存在本仓库源码和本标签的安装包中，无须再粘贴浏览器控制台脚本。已有面板需先使用本页的一键部署命令升级（保留现有配置），然后强制刷新浏览器页面即可看到入口。后续仍使用同一个标签和部署命令。
+功能保存在本仓库源码和本标签的安装包中，无须再粘贴浏览器控制台脚本。已有面板需先使用本页的专用更新命令升级（保留现有配置），然后强制刷新浏览器页面即可看到入口。本版使用独立固定标签；原版本仍可继续按原命令部署。
 
 ## 已有面板和升级
 
@@ -92,8 +106,8 @@ HY2 复用安装时配置的面板 TLS 证书及密钥文件，SNI 从证书覆�
 ## Docker
 
 ```bash
-docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
-docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-sort https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-sort
+docker run -d --name 3x-ui --network host --cap-add=NET_ADMIN --cap-add=NET_RAW -v "$PWD/db:/etc/x-ui" ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-sort
 ```
 
 容器首次启动没有证书时，HY2 保留为待配置状态。容器使用 HY2 时，需要持久挂载有效证书文件，并在面板设置对应路径和 SNI。

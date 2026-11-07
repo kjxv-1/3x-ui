@@ -16,10 +16,10 @@ cat > /usr/local/bin/curl <<"CURL"
 args=("$@")
 for index in "${!args[@]}"; do
     case "${args[$index]}" in
-        https://github.com/kjxv-1/3x-ui/releases/download/v3.10.2-preset-ipv6-hy2/*)
+        https://github.com/kjxv-1/3x-ui/releases/download/v3.10.2-preset-sort/*)
             args[$index]="file:///assets/${args[$index]##*/}" ;;
-        https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/*)
-            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/}" ;;
+        https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-sort/*)
+            args[$index]="file:///source/${args[$index]#https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-sort/}" ;;
     esac
 done
 if [[ " ${args[*]} " == *"%{http_code}"* && " ${args[*]} " == *"I"* ]]; then
@@ -56,7 +56,7 @@ PY
 bash /source/install.sh > /tmp/install.log 2>&1 || { tail -n 60 /tmp/install.log; exit 1; }
 test ! -e /etc/x-ui/.preset-pending
 test ! -e /etc/x-ui/.kjxv-preset-pending
-test "$(/usr/local/x-ui/x-ui -v)" = "3.10.2-preset-ipv6-hy2"
+test "$(/usr/local/x-ui/x-ui -v)" = "3.10.2-preset-sort"
 test "$(stat -c %a /etc/x-ui/install-result.env)" = 600
 test "$(stat -c %a /etc/x-ui/preset-result.json)" = 600
 . /etc/x-ui/install-result.env

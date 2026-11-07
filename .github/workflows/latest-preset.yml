@@ -1,8 +1,8 @@
-name: Maintain latest default node preset
+name: Publish independent subscription sorting version
 'on':
   push:
     branches:
-    - codex/v3.10.2-preset-ipv6-hy2
+    - codex/v3.10.2-preset-sort
   workflow_dispatch: {}
 permissions:
   contents: read
@@ -213,7 +213,7 @@ jobs:
     - build-windows
     - verify
     - installer-test
-    if: github.ref == 'refs/heads/codex/v3.10.2-preset-ipv6-hy2'
+    if: github.ref == 'refs/heads/codex/v3.10.2-preset-sort'
     permissions:
       contents: write
     steps:
@@ -223,7 +223,7 @@ jobs:
         pattern: x-ui-*
         path: packages
         merge-multiple: true
-    - name: Update the same preset tag and release after all checks pass
+    - name: Publish the independent fixed tag after all checks pass
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: bash deploy/preset/publish.sh packages
@@ -246,6 +246,8 @@ jobs:
       run: bash deploy/preset/installer_test.sh packages
     - name: Reproduce ACME directory regression and verify fresh HTTPS panel and subscription
       run: bash deploy/preset/tls_installer_test.sh packages
+    - name: Verify existing-panel updater against the actual packaged program
+      run: bash deploy/preset/updater_integration_test.sh packages
   published-install:
     if: needs.publish.result == 'success'
     needs:
@@ -276,12 +278,12 @@ jobs:
           if docker exec preset-container-test test -f /etc/x-ui/preset-result.json; then break; fi
           sleep 1
         done
-        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset-ipv6-hy2
+        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset-sort
         docker exec preset-container-test /app/bin/xray-linux-amd64 version | grep -F 'Xray 26.6.27'
         docker exec preset-container-test test -s /etc/x-ui/preset-result.json
         docker rm -f preset-container-test
 concurrency:
-  group: maintain-v3.10.2-preset-ipv6-hy2
+  group: maintain-v3.10.2-preset-sort
   cancel-in-progress: false
 env:
-  PRESET_RELEASE_TAG: v3.10.2-preset-ipv6-hy2
+  PRESET_RELEASE_TAG: v3.10.2-preset-sort

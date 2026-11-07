@@ -1,6 +1,6 @@
 services:
   3xui:
-    image: ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2
+    image: ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-sort
     pull_policy: build
     network_mode: host
     build:

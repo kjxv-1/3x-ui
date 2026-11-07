@@ -76,7 +76,7 @@ Construido como un fork mejorado del proyecto X-UI original, 3X-UI añade un sop
 Install this fork's **3X-UI 3.10.2 preset**, with **Xray v26.6.27** pinned:
 
 ```bash
-bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-ipv6-hy2/deploy/preset/install.sh)
+bash <(curl -fLsS https://raw.githubusercontent.com/kjxv-1/3x-ui/v3.10.2-preset-sort/deploy/preset/install.sh)
 ```
 
 The initial installation creates **自建-直连** and **自建-住宅**, two VLESS + REALITY inbounds on different random available ports, sharing one `01` client. Clash/Mihomo subscriptions are enabled.
@@ -119,7 +119,7 @@ El archivo SQLite de origen permanece intacto; elimínalo manualmente una vez qu
 Build this fork's image locally before starting the container:
 
 ```bash
-docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-ipv6-hy2 https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-ipv6-hy2
+docker build -t ghcr.io/kjxv-1/3x-ui:v3.10.2-preset-sort https://github.com/kjxv-1/3x-ui.git#codex/v3.10.2-preset-sort
 ```
 
 El comando predeterminado `docker compose up -d` sigue usando SQLite. Para ejecutarlo con el servicio PostgreSQL incluido, descomenta las dos líneas de variables de entorno `XUI_DB_*` en `docker-compose.yml` e inícialo con el perfil:

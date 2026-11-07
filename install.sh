@@ -1763,12 +1763,12 @@ install_x-ui() {
     local preset_first_install=0
     local preset_pending="${XUI_DB_FOLDER:-/etc/x-ui}/.preset-pending"
     if [[ -f "$preset_pending" ]] || [[ ! -e "${xui_folder}/x-ui" && ! -e "${XUI_DB_FOLDER:-/etc/x-ui}/x-ui.db" ]]; then preset_first_install=1; fi
-    if [[ $# -gt 0 && "$1" != "v3.10.2-preset-ipv6-hy2" ]]; then echo "This preset installer only installs v3.10.2-preset-ipv6-hy2." >&2; exit 1; fi
+    if [[ $# -gt 0 && "$1" != "v3.10.2-preset-sort" ]]; then echo "This preset installer only installs v3.10.2-preset-sort." >&2; exit 1; fi
     cd ${xui_folder%/x-ui}/
 
     # Download resources
     if [ $# == 0 ]; then
-        tag_version="v3.10.2-preset-ipv6-hy2"
+        tag_version="v3.10.2-preset-sort"
         if [[ ! -n "$tag_version" ]]; then
             echo -e "${red}Failed to fetch x-ui version, it may be due to GitHub API restrictions, please try it later${plain}"
             exit 1
@@ -1968,7 +1968,7 @@ install_x-ui() {
     mkdir -p /var/log/x-ui
     if [[ "$preset_first_install" == "1" ]]; then
         mkdir -p "${XUI_DB_FOLDER:-/etc/x-ui}" || exit 1
-        (umask 077; printf '%s\n' "v3.10.2-preset-ipv6-hy2" > "$preset_pending") || exit 1
+        (umask 077; printf '%s\n' "v3.10.2-preset-sort" > "$preset_pending") || exit 1
     fi
     config_after_install
     # ACME installation changes the shell directory to the user's home.

@@ -17,7 +17,7 @@ jobs:
           if docker exec preset-container-test test -f /etc/x-ui/preset-result.json; then break; fi
           sleep 1
         done
-        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset-ipv6-hy2
+        docker exec preset-container-test /app/x-ui -v | grep -Fx 3.10.2-preset-sort
         docker exec preset-container-test /app/bin/xray-linux-amd64 version | grep -F 'Xray 26.6.27'
         docker exec preset-container-test test -s /etc/x-ui/preset-result.json
         docker rm -f preset-container-test
